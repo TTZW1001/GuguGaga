@@ -7,8 +7,7 @@ root=pathlib.Path(__file__).resolve().parents[1]
 used={
     'Basis','face_Base_obj_morph0','face_Base_obj_morph7',
     'face_Base_obj_morph3','face_Base_obj_morph5','face_Base_obj_morph6',
-    'face_NoOutline_obj_morph4','face_NoOutline_obj_morph5',
-    'face_NoOutline_obj_morph0','face_NoOutline_obj_morph3'
+    'face_NoOutline_obj_morph0','face_NoOutline_obj_morph1'
 }
 head=bpy.data.objects['Tomori_mesh']
 for key in list(head.data.shape_keys.key_blocks):

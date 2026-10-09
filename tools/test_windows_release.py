@@ -1,11 +1,13 @@
 """Exercise the exported Windows executable through native window messages."""
-import ctypes, json, os, pathlib, subprocess, time
+import argparse, ctypes, json, os, pathlib, subprocess, time
 from ctypes import wintypes
 import psutil
 from PIL import ImageGrab
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-EXE = ROOT / 'build/企鹅小日子.exe'
+parser = argparse.ArgumentParser()
+parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/企鹅小日子-1.0.1.exe')
+EXE = parser.parse_args().exe.resolve()
 RUNTIME = ROOT / ('tests/runtime/release-' + str(time.time_ns()))
 OUTPUT = ROOT / 'tests/output'
 RUNTIME.mkdir(parents=True, exist_ok=True)

@@ -5,9 +5,12 @@ const SCALE = 2.5
 var face: MeshInstance3D
 var morphs: Dictionary = {}
 var expression_weights: Dictionary = {}
+var blink_wait = 3.0
+var blink_elapsed = -1.0
 
 func _ready():
 	rng.randomize()
+	blink_wait = rng.randf_range(2.8,5.6)
 	torso = pivot(self,Vector3.ZERO)
 	model = load("res://assets/tomori/penguin.glb").instantiate()
 	model.scale = Vector3.ONE*SCALE
@@ -72,18 +75,36 @@ func set_expression(name_: String, value: float):
 	if morphs.has(name_): expression_weights[name_] = clampf(value,0,1)
 
 func close_eyes(amount: float):
+	# Skin eyelids and the separate eye/lash surface must use matching morphs.
+	# NoOutline 4/5 are different expressions, not the partners of Base 0/7.
 	set_expression("face_Base_obj_morph0",amount)
 	set_expression("face_Base_obj_morph7",amount)
-	set_expression("face_NoOutline_obj_morph4",amount)
-	set_expression("face_NoOutline_obj_morph5",amount)
+	set_expression("face_NoOutline_obj_morph0",amount)
+	set_expression("face_NoOutline_obj_morph1",amount)
 
 func smile(amount: float):
 	set_expression("face_Base_obj_morph3",amount)
-	set_expression("face_NoOutline_obj_morph0",amount*0.5)
 
 func open_mouth(amount: float):
 	set_expression("face_Base_obj_morph5",amount)
-	set_expression("face_NoOutline_obj_morph3",amount)
+
+func idle_blink(delta: float) -> float:
+	if not action.is_empty():
+		blink_elapsed = -1.0
+		blink_wait = maxf(blink_wait,0.8)
+		return 0.0
+	if blink_elapsed < 0:
+		blink_wait -= delta
+		if blink_wait > 0: return 0.0
+		blink_elapsed = 0.0
+	blink_elapsed += delta
+	# Quick closure, a brief fully closed hold, and a softer reopening.
+	if blink_elapsed < 0.07: return smoothstep(0.0,0.07,blink_elapsed)
+	if blink_elapsed < 0.11: return 1.0
+	if blink_elapsed < 0.23: return 1.0-smoothstep(0.11,0.23,blink_elapsed)
+	blink_elapsed = -1.0
+	blink_wait = rng.randf_range(2.8,5.6)
+	return 0.0
 
 func _process(delta: float):
 	time += delta
@@ -139,11 +160,12 @@ func _process(delta: float):
 	var elapsed = action_total-action_left
 	var wave = sin(elapsed*10)
 	var envelope = sin(PI*clampf(action_left/action_total,0,1))
+	var expression_envelope = smoothstep(0.0,0.12,elapsed)*smoothstep(0.0,0.18,action_left)
 	match action:
 		"head":
 			turn_bone("head_x",Vector3.FORWARD,envelope*0.16)
 			set_expression("face_Base_obj_morph0",envelope)
-			set_expression("face_NoOutline_obj_morph4",envelope)
+			set_expression("face_NoOutline_obj_morph0",envelope)
 		"look": turn_bone("head_x",Vector3.UP,sin(elapsed*2.4)*0.25*envelope)
 		"yawn":
 			turn_bone("head_x",Vector3.RIGHT,-envelope*0.1)
@@ -152,14 +174,14 @@ func _process(delta: float):
 		"pet":
 			turn_bone("head_x",Vector3.FORWARD,sin(time*4.5)*0.08)
 			turn_bone("spine_01_x",Vector3.FORWARD,sin(time*4.5)*0.025)
-			close_eyes(0.98)
-			smile(0.55)
+			close_eyes(expression_envelope)
+			smile(0.4*expression_envelope)
 		"belly":
 			turn_bone("spine_01_x",Vector3.RIGHT,-envelope*0.12)
 			turn_bone("head_x",Vector3.RIGHT,-envelope*0.08)
 			turn_bone("shoulder_l",Vector3.FORWARD,-envelope*0.4)
 			turn_bone("shoulder_r",Vector3.FORWARD,envelope*0.4)
-			close_eyes(envelope*0.9)
+			close_eyes(expression_envelope)
 			smile(envelope)
 		"wing_l": turn_bone("shoulder_r",Vector3.FORWARD,envelope*(1.2+wave*0.2))
 		"wing_r": turn_bone("shoulder_l",Vector3.FORWARD,-envelope*(1.2+wave*0.2))
@@ -175,8 +197,8 @@ func _process(delta: float):
 			open_mouth(absf(wave)*0.6)
 		"wash":
 			turn_bone("spine_01_x",Vector3.FORWARD,wave*0.045)
-			close_eyes(0.95)
-			smile(0.35)
+			close_eyes(expression_envelope)
+			smile(0.35*expression_envelope)
 		"angry":
 			turn_bone("head_x",Vector3.UP,wave*0.12*envelope)
 			set_expression("face_Base_obj_morph6",envelope*0.8)
@@ -193,8 +215,8 @@ func _process(delta: float):
 			turn_bone("leftthigh",Vector3.RIGHT,wave*0.2)
 			turn_bone("rightthigh",Vector3.RIGHT,-wave*0.2)
 			smile(0.8)
-	if action.is_empty() and fmod(time,4.4)<0.18:
-		close_eyes(sin(fmod(time,4.4)/0.18*PI))
+	var blink = idle_blink(delta)
+	if blink > 0: close_eyes(blink)
 	if low_mood and action.is_empty():turn_bone("head_x",Vector3.RIGHT,0.06)
 	for name_ in expression_weights: face.set_blend_shape_value(morphs[name_],expression_weights[name_])
 	skeleton.force_update_all_bone_transforms()
