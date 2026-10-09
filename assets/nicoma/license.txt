@@ -1,0 +1,11 @@
+Model Information:
+* title:	Penguin (Rig-CntRig-Anim)
+* source:	https://sketchfab.com/3d-models/penguin-rig-cntrig-anim-db8a037d135b41b08752ce4c57f43525
+* author:	nicoma (https://sketchfab.com/vladkozhukh)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Penguin (Rig-CntRig-Anim)" (https://sketchfab.com/3d-models/penguin-rig-cntrig-anim-db8a037d135b41b08752ce4c57f43525) by nicoma (https://sketchfab.com/vladkozhukh) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

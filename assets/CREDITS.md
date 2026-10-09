@@ -1,0 +1,33 @@
+# 素材署名
+
+当前主角来自用户提供的 `assets/incoming/企鹅高松灯.blend`，由高松灯头部与企鹅身体组成。
+头部贴图、网格及表情形态随该文件内嵌提供；独立头部作者和许可说明未随文件附带，来源待提供者补充，不能将以下企鹅身体的 CC BY 许可套用到头部。
+本地个人体验版本保留该组合模型；未宣称取得其头部素材的公开分发许可。
+
+企鹅身体：This work is based on **"Private (Madagascar)"**
+(https://sketchfab.com/3d-models/private-madagascar-a288037027374e089d4744b3ad25ad24)
+by **Guilherme Navarro** (https://sketchfab.com/guinavarro.al), licensed under
+**CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/).
+原许可随下载包提供，保存在 `assets/tomori/body-license.txt`。
+
+本项目对组合模型进行了 GLB 导出、贴图缩小、表情形态精简；增加了逐骨骼动作、表情控制、命中区域、配饰与道具。未修改原始 `.blend`。
+
+备用纯企鹅（当前仅在组合模型缺失时使用）：
+
+This work is based on **"Penguin (Rig-CntRig-Anim)"**
+(https://sketchfab.com/3d-models/penguin-rig-cntrig-anim-db8a037d135b41b08752ce4c57f43525)
+by **nicoma** (https://sketchfab.com/vladkozhukh), licensed under
+**CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/).
+
+模型由用户通过 Sketchfab 官方下载提供，原始许可保存在 `assets/nicoma/license.txt`。
+本项目修改了模型材质、脸部、眼睛及腹部表现；增加了程序骨骼互动、命中区域、配饰与道具。
+保留原模型骨骼及六段动画。原作者不代表认可本游戏。
+
+企鹅程序降级模型、配饰、小屋 SVG 背景、图标与场景几何均为本项目创建。
+中文字体通过 Windows 系统字体加载，不随安装包分发微软字体。
+
+评估但未在发行包使用：Quaternius Textured Cute Monster Pack，CC0。
+https://opengameart.org/content/textured-cute-monster-pack
+候选原始 FBX / 贴图与 Blender 文件保留于源码供参考，不参与运行或导出。
+
+Godot Engine 4.6.2，MIT License：https://godotengine.org/license/

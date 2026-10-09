@@ -1,0 +1,12 @@
+.godot/
+build/
+*.tmp
+*.log
+template_*
+monsters.zip
+tools/templates/
+tools/blender/
+tools/source/
+assets/penguin/
+tests/output/
+tests/runtime/
