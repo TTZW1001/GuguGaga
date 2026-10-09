@@ -10,7 +10,7 @@ by **Guilherme Navarro** (https://sketchfab.com/guinavarro.al), licensed under
 **CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/).
 原许可随下载包提供，保存在 `assets/tomori/body-license.txt`。
 
-本项目对组合模型进行了 GLB 导出、贴图缩小、表情形态精简；增加了逐骨骼动作、表情控制、命中区域、配饰与道具。未修改原始 `.blend`。
+本项目对组合模型进行了 GLB 导出、贴图缩小、表情形态精简和企鹅翼根关节位置调整；增加了逐骨骼动作、表情控制、命中区域、配饰与道具。未修改原始 `.blend`。
 
 备用纯企鹅（当前仅在组合模型缺失时使用）：
 

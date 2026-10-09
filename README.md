@@ -4,7 +4,7 @@ Windows 64 位单机、全程静音的 3D 企鹅养成游戏。开发依据为�
 
 本版本主角使用用户提供的「企鹅高松灯.blend」。保留原有骨骼及表情形态，增加程序骨骼动作、互动、配饰挂点；运行时不需要 Blender。贴图缩至 1024px，保留游戏实际使用的 7 个表情形态。
 
-双击 `build/企鹅小日子-1.0.1.exe` 即可运行，无需安装 Godot 或联网。
+双击 `build/企鹅小日子-1.0.2.exe` 即可运行，无需安装 Godot 或联网。
 窗口可调整大小，最低 760×600，使用 Compatibility / OpenGL 3.3 渲染。
 
 - 首次启动输入名字并领养；初始 500 金币、小鱼干×3、普通肥皂×2。领养后会自动发放符合条件的成就奖励（初次见面 +30、幸福企鹅 +80）。
@@ -29,6 +29,7 @@ Windows 导出预设使用 `tools/templates` 中的官方模板；若缺失，�
 $env:APPDATA = "$PWD/tests/runtime"
 & 'G:\Godot\Godot_v4.6.2-stable_win64_console.exe' --headless --path . --script tests/test_state.gd
 & 'G:\Godot\Godot_v4.6.2-stable_win64_console.exe' --path . --script tests/test_ui.gd
+& 'G:\Godot\Godot_v4.6.2-stable_win64_console.exe' --path . --script tests/test_model.gd
 ```
 
 企鹅身体作者 **Guilherme Navarro**，许可 **CC BY 4.0**；头部来源随用户提供的组合模型记录。备用纯企鹅作者 **nicoma**，许可 **CC BY 4.0**。完整来源、改动说明与引擎许可见 `assets/CREDITS.md` 和发行包 `素材署名.md`。

@@ -6,7 +6,7 @@ from PIL import ImageGrab
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/企鹅小日子-1.0.1.exe')
+parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/企鹅小日子-1.0.2.exe')
 EXE = parser.parse_args().exe.resolve()
 RUNTIME = ROOT / ('tests/runtime/release-' + str(time.time_ns()))
 OUTPUT = ROOT / 'tests/output'

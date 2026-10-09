@@ -4,6 +4,17 @@ The input blend is never overwritten; export only gameplay facial morphs and
 """
 import bpy, pathlib, zipfile
 root=pathlib.Path(__file__).resolve().parents[1]
+# The source's arm pivots sit outside the flipper roots. Put the hinge at the
+# actual attachment, so lowering a flipper does not fold its root backwards.
+armature=bpy.data.objects['root']
+bpy.context.view_layer.objects.active=armature
+armature.select_set(True)
+bpy.ops.object.mode_set(mode='EDIT')
+for side,sign in [('l',1),('r',-1)]:
+    bone=armature.data.edit_bones['arm_stretch_'+side]
+    bone.use_connect=False
+    bone.head=(sign*0.13,0.035,0.515)
+bpy.ops.object.mode_set(mode='OBJECT')
 used={
     'Basis','face_Base_obj_morph0','face_Base_obj_morph7',
     'face_Base_obj_morph3','face_Base_obj_morph5','face_Base_obj_morph6',

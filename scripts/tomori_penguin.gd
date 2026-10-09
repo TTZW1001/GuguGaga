@@ -88,6 +88,16 @@ func smile(amount: float):
 func open_mouth(amount: float):
 	set_expression("face_Base_obj_morph5",amount)
 
+func turn_flipper(side: String, axis: Vector3, angle: float):
+	# Shoulder bones also skin the chest and neck: animate the flipper hinge.
+	# Pose rotations use parent space; the shoulder's rolled axes differ on each
+	# side, so convert the intended model-space axis instead of assuming local Z.
+	var bone_name = "arm_stretch_"+side
+	var idx = skeleton.find_bone(bone_name)
+	var parent = skeleton.get_bone_parent(idx)
+	var axis_in_parent = skeleton.get_bone_global_pose(parent).basis.inverse()*axis
+	turn_bone(bone_name,axis_in_parent.normalized(),angle)
+
 func idle_blink(delta: float) -> float:
 	if not action.is_empty():
 		blink_elapsed = -1.0
@@ -130,15 +140,15 @@ func _process(delta: float):
 	torso.rotation = Vector3.ZERO
 	torso.position.y = sin(time*2)*0.009
 	# Lower the source's T-pose wings to a relaxed angle before other movement.
-	turn_bone("shoulder_l",Vector3.FORWARD,1.15)
-	turn_bone("shoulder_r",Vector3.FORWARD,-1.15)
+	turn_flipper("l",Vector3.FORWARD,1.25)
+	turn_flipper("r",Vector3.FORWARD,-1.25)
 	turn_bone("head_x",Vector3.RIGHT,sin(time*1.4)*0.018)
 	if moving:
 		var walk = sin(time*8)
 		turn_bone("leftthigh",Vector3.RIGHT,walk*0.22)
 		turn_bone("rightthigh",Vector3.RIGHT,-walk*0.22)
-		turn_bone("shoulder_l",Vector3.RIGHT,walk*0.12)
-		turn_bone("shoulder_r",Vector3.RIGHT,-walk*0.12)
+		turn_flipper("l",Vector3.RIGHT,walk*0.12)
+		turn_flipper("r",Vector3.RIGHT,-walk*0.12)
 		turn_bone("spine_01_x",Vector3.FORWARD,walk*0.035)
 		torso.position.y += absf(walk)*0.025
 	book.visible = task_kind == "study" and task_id not in ["sport","martial","combat","stage"]
@@ -147,15 +157,15 @@ func _process(delta: float):
 		if book.visible or task_id in ["library","code"]:
 			book.visible = true
 			turn_bone("head_x",Vector3.RIGHT,0.1+sin(time*2.5)*0.035)
-			turn_bone("arm_stretch_l",Vector3.RIGHT,-0.45)
-			turn_bone("arm_stretch_r",Vector3.RIGHT,-0.45)
+			turn_flipper("l",Vector3.RIGHT,-0.45)
+			turn_flipper("r",Vector3.RIGHT,-0.45)
 		elif task_id in ["sport","martial","combat","idol","stage"]:
-			turn_bone("shoulder_l",Vector3.FORWARD,-0.5+sin(time*3)*0.25)
-			turn_bone("shoulder_r",Vector3.FORWARD,0.5-sin(time*3)*0.25)
+			turn_flipper("l",Vector3.FORWARD,-0.5+sin(time*3)*0.25)
+			turn_flipper("r",Vector3.FORWARD,0.5-sin(time*3)*0.25)
 			turn_bone("spine_01_x",Vector3.FORWARD,sin(time*3)*0.07)
 			torso.position.y += absf(sin(time*3))*0.035
 		else:
-			turn_bone("arm_stretch_l",Vector3.FORWARD,-0.35+sin(time*3)*0.2)
+			turn_flipper("l",Vector3.FORWARD,-0.35+sin(time*3)*0.2)
 			turn_bone("head_x",Vector3.FORWARD,sin(time*2)*0.045)
 	var elapsed = action_total-action_left
 	var wave = sin(elapsed*10)
@@ -179,18 +189,18 @@ func _process(delta: float):
 		"belly":
 			turn_bone("spine_01_x",Vector3.RIGHT,-envelope*0.12)
 			turn_bone("head_x",Vector3.RIGHT,-envelope*0.08)
-			turn_bone("shoulder_l",Vector3.FORWARD,-envelope*0.4)
-			turn_bone("shoulder_r",Vector3.FORWARD,envelope*0.4)
+			turn_flipper("l",Vector3.FORWARD,-envelope*0.4)
+			turn_flipper("r",Vector3.FORWARD,envelope*0.4)
 			close_eyes(expression_envelope)
 			smile(envelope)
-		"wing_l": turn_bone("shoulder_r",Vector3.FORWARD,envelope*(1.2+wave*0.2))
-		"wing_r": turn_bone("shoulder_l",Vector3.FORWARD,-envelope*(1.2+wave*0.2))
+		"wing_l": turn_flipper("r",Vector3.FORWARD,envelope*(1.2+wave*0.2))
+		"wing_r": turn_flipper("l",Vector3.FORWARD,-envelope*(1.2+wave*0.2))
 		"hop","feet","celebrate":
 			torso.position.y = absf(sin(elapsed*5))*0.23*envelope
 			turn_bone("leftthigh",Vector3.RIGHT,-envelope*0.15)
 			turn_bone("rightthigh",Vector3.RIGHT,-envelope*0.15)
-			turn_bone("shoulder_l",Vector3.FORWARD,-envelope*0.6)
-			turn_bone("shoulder_r",Vector3.FORWARD,envelope*0.6)
+			turn_flipper("l",Vector3.FORWARD,-envelope*0.6)
+			turn_flipper("r",Vector3.FORWARD,envelope*0.6)
 			smile(envelope*0.8)
 		"feed":
 			turn_bone("head_x",Vector3.RIGHT,wave*0.045)
@@ -204,14 +214,14 @@ func _process(delta: float):
 			set_expression("face_Base_obj_morph6",envelope*0.8)
 		"spin":
 			torso.rotation.y = (1-action_left/action_total)*TAU
-			turn_bone("shoulder_l",Vector3.FORWARD,-envelope*0.5)
-			turn_bone("shoulder_r",Vector3.FORWARD,envelope*0.5)
+			turn_flipper("l",Vector3.FORWARD,-envelope*0.5)
+			turn_flipper("r",Vector3.FORWARD,envelope*0.5)
 			smile(envelope)
 		"dance":
 			turn_bone("spine_01_x",Vector3.FORWARD,wave*0.08*envelope)
 			turn_bone("head_x",Vector3.FORWARD,-wave*0.05*envelope)
-			turn_bone("shoulder_l",Vector3.FORWARD,-0.6-wave*0.3)
-			turn_bone("shoulder_r",Vector3.FORWARD,0.6-wave*0.3)
+			turn_flipper("l",Vector3.FORWARD,-0.6-wave*0.3)
+			turn_flipper("r",Vector3.FORWARD,0.6-wave*0.3)
 			turn_bone("leftthigh",Vector3.RIGHT,wave*0.2)
 			turn_bone("rightthigh",Vector3.RIGHT,-wave*0.2)
 			smile(0.8)
