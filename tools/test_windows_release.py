@@ -6,7 +6,7 @@ from PIL import ImageGrab
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/企鹅小日子-1.0.2.exe')
+parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/养一只咕咕嘎嘎吧！-1.1.0.exe')
 EXE = parser.parse_args().exe.resolve()
 RUNTIME = ROOT / ('tests/runtime/release-' + str(time.time_ns()))
 OUTPUT = ROOT / 'tests/output'
@@ -52,11 +52,11 @@ def window(pid):
     user32.EnumWindows(visit, 0)
     return found[0] if found else None
 
-def start():
+def start(executable=EXE):
     log = open(OUTPUT / 'release.log', 'ab')
     engine_log = OUTPUT / ('release-engine-' + str(time.time_ns()) + '.log')
     engine_logs.append(engine_log)
-    proc = subprocess.Popen([str(EXE), '--log-file', str(engine_log)],
+    proc = subprocess.Popen([str(executable), '--log-file', str(engine_log)],
                             cwd=str(ROOT / 'build'), env=env,
                             stdout=log, stderr=log, creationflags=subprocess.CREATE_NO_WINDOW)
     log.close()
@@ -77,14 +77,23 @@ def dimensions(hwnd):
     user32.GetClientRect(hwnd, ctypes.byref(rect))
     return rect.right, rect.bottom
 
-def click(hwnd, x, y):
+def click(hwnd, x, y, canvas=(1280, 720)):
     w, h = dimensions(hwnd)
-    coord = int(x * w / 960) | (int(y * h / 700) << 16)
+    cw, ch = canvas
+    scale = min(w / cw, h / ch)
+    coord = int((w-cw*scale)/2+x*scale) | (int((h-ch*scale)/2+y*scale) << 16)
     user32.PostMessageW(hwnd, 0x200, 0, coord)
     user32.PostMessageW(hwnd, 0x201, 1, coord)
     time.sleep(0.08)
     user32.PostMessageW(hwnd, 0x202, 0, coord)
     time.sleep(0.3)
+
+def key(hwnd, code):
+    scan = user32.MapVirtualKeyW(code, 0)
+    user32.PostMessageW(hwnd, 0x100, code, 1 | (scan << 16))
+    time.sleep(0.04)
+    user32.PostMessageW(hwnd, 0x101, code, 1 | (scan << 16) | (3 << 30))
+    time.sleep(0.04)
 
 def capture(hwnd, name):
     w, h = dimensions(hwnd)
@@ -108,23 +117,54 @@ def close(proc, hwnd):
 
 proc = None
 try:
+    file = RUNTIME / 'Godot/app_userdata/企鹅小日子/penguin.json'
+    legacy = ROOT / 'build/企鹅小日子-1.0.2.exe'
+    if legacy.exists():
+        proc, hwnd = start(legacy)
+        click(hwnd, 678, 547, canvas=(960, 700))
+        expect(wait_until(file.exists), 'old 1.0.2 executable creates legacy save fixture')
+        close(proc, hwnd)
     proc, hwnd = start()
-    expect(dimensions(hwnd)[0] >= 760, 'release creates resizable native window')
+    expect(dimensions(hwnd)[0] >= 960, 'release creates resizable native window')
+    width, height = dimensions(hwnd)
+    expect(abs(width / height - 16 / 9) < 0.01, 'release starts with 16:9 window')
+    title = ctypes.create_unicode_buffer(256)
+    user32.GetWindowTextW(hwnd, title, 256)
+    expect(title.value == '养一只咕咕嘎嘎吧！', 'native window uses new game title')
     capture(hwnd, 'release_adoption.png')
     file = RUNTIME / 'Godot/app_userdata/企鹅小日子/penguin.json'
     if not file.exists():
-        click(hwnd, 678, 547)
+        click(hwnd, 818, 588)
     expect(wait_until(file.exists), 'native adoption writes user-directory save')
     first = save_data()
     expect(first['adopted'] and first['inventory']['fish'] == 3, 'release adoption initialized')
     expect(first['coins'] == 610, 'initial coins and automatic achievements correct')
-    click(hwnd, 350, 655)  # Learning.
+    click(hwnd, 510, 677)  # Learning.
     capture(hwnd, 'release_courses.png')
-    click(hwnd, 891, 340)  # Literacy course.
+    click(hwnd, 962, 350)  # Literacy course.
     expect(wait_until(lambda: save_data()['task'].get('id')=='read'), 'native course action is persisted')
     active = save_data()
     expect(active['task'].get('id') == 'read', 'native course selection starts fixed task')
     expect(active['coins'] == 605, 'course tuition escrow persisted')
+    click(hwnd, 1210, 370)  # Feed popout during the course.
+    click(hwnd, 920, 370)  # Fish, now effective because time has elapsed.
+    expect(wait_until(lambda: save_data()['inventory']['fish']==2), 'native popout uses item during task')
+    click(hwnd, 920, 370)  # Menu remains open for another use.
+    expect(wait_until(lambda: save_data()['inventory']['fish']==1), 'native popout stays open for repeat use')
+    expect(save_data()['task'].get('id') == 'read', 'native care preserves task')
+    click(hwnd, 600, 230)  # Outside consumes dismissal click.
+    click(hwnd, 110, 42)  # Profile, auto-save a new name on Enter.
+    click(hwnd, 690, 284)
+    key(hwnd, 0x23)  # End, then remove the existing name.
+    for _ in range(12):
+        key(hwnd, 0x08)
+    # WM_CHAR can type text without depending on keyboard layout.
+    for ch in '旧档咕咕':
+        user32.PostMessageW(hwnd, 0x102, ord(ch), 0)
+        time.sleep(0.06)
+    key(hwnd, 0x0D)
+    expect(wait_until(lambda: save_data()['name']=='旧档咕咕'), 'native profile name auto-saves')
+    click(hwnd, 10, 350)
     time.sleep(1)
     capture(hwnd, 'release_home.png')
     p = psutil.Process(proc.pid)
@@ -144,6 +184,7 @@ try:
     recovered = save_data()
     expect(recovered['task'].get('id') == 'read', 'relaunch continues active task')
     expect(recovered['coins'] == 605, 'relaunch does not charge tuition twice')
+    expect(recovered['name'] == '旧档咕咕' and recovered['inventory']['fish']==1, 'renamed release reads existing old-directory save')
     expect(len(recovered['achievements']) == 2, 'relaunch does not repeat achievement rewards')
     capture(hwnd, 'release_restart.png')
     proc.terminate()

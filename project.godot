@@ -1,18 +1,22 @@
 config_version=5
 
 [application]
-config/name="企鹅小日子"
+config/name="养一只咕咕嘎嘎吧！"
+config/version="1.1.0"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="Godot/app_userdata/企鹅小日子"
 run/main_scene="res://main.tscn"
 run/flush_stdout_on_print=true
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://assets/icon.svg"
 
 [display]
-window/size/viewport_width=960
-window/size/viewport_height=700
-window/size/window_width_override=960
-window/size/window_height_override=700
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/size/window_width_override=1920
+window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
+window/stretch/aspect="keep"
 
 [rendering]
 renderer/rendering_method="gl_compatibility"

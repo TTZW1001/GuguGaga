@@ -26,6 +26,7 @@ var equipped = ""
 var low_mood = false
 var gold = false
 var rng = RandomNumberGenerator.new()
+var view_yaw = 0.0 # Presentation rotation; never changes activity or interaction counters.
 
 func material(hex: String, rough: float = 0.8) -> StandardMaterial3D:
 	var m = StandardMaterial3D.new()
@@ -292,6 +293,7 @@ func _process(delta: float):
 			foot_l.rotation.x = wave*0.25
 			foot_r.rotation.x = -wave*0.25
 	if low_mood and action.is_empty(): head.rotation.x += 0.09
+	torso.rotation.y += view_yaw
 	for i in bubbles.size():
 		var b = bubbles[i]
 		b.visible = action == "wash"

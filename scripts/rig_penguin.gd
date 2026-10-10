@@ -177,6 +177,7 @@ func _process(delta: float):
 			turn_bone("lowerarm_r_6",Vector3.FORWARD,-envelope*0.8)
 	if fmod(time,4.3)<0.14: close_eyes(1)
 	if low_mood and action.is_empty(): turn_bone("head_16",Vector3.RIGHT,0.08)
+	torso.rotation.y += view_yaw
 	skeleton.force_update_all_bone_transforms()
 	for i in bubbles.size():
 		var b = bubbles[i]

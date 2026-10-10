@@ -40,13 +40,13 @@ func load_game(now: float) -> bool:
 		var saved = parse_json(envelope.payload)
 		if not valid(saved): continue
 		data = saved
-		if suffix != "": message.emit("已从安全备份恢复存档。")
+		if suffix != "": message.emit("已恢复备份存档。")
 		advance(now,true)
 		commit()
 		return true
 	if exists:
 		load_error = true
-		message.emit("存档及备份暂时无法读取，已保留原文件。请先备份用户存档目录。")
+		message.emit("存档无法读取，原文件已保留。")
 	return false
 
 func parse_json(content: String):
@@ -109,7 +109,7 @@ func save() -> bool:
 	return true
 
 func report_save_error():
-	if not save_error: message.emit("存档写入失败，请检查用户目录是否可写；暂时不要关闭游戏。")
+	if not save_error: message.emit("保存失败，请检查存档目录权限。")
 	save_error = true
 
 func commit():
@@ -148,7 +148,7 @@ func advance(now: float, offline: bool = false):
 
 func start_task(kind: String, id: String, now: float) -> String:
 	advance(now)
-	if not data.task.is_empty(): return "正在进行一项任务，完成或提前结束后再开始。"
+	if not data.task.is_empty(): return "请先完成或结束当前任务。"
 	var cfg = C.task(kind,id)
 	if cfg.is_empty(): return "找不到这项任务。"
 	var missing: Array[String] = []
@@ -194,7 +194,7 @@ func buy(id: String, now: float) -> String:
 	advance(now)
 	var item = C.item(id)
 	if item.is_empty(): return "找不到商品。"
-	if data.coins+0.00001 < item.price: return "可用金币不足；课程预留学费不能用于购物。"
+	if data.coins+0.00001 < item.price: return "可用金币不足。"
 	data.coins -= item.price
 	data.inventory[id] = data.inventory.get(id,0)+1
 	commit()
@@ -203,11 +203,11 @@ func buy(id: String, now: float) -> String:
 func use_item(id: String, now: float) -> String:
 	advance(now)
 	var item = C.item(id)
-	if item.is_empty() or data.inventory.get(id,0) < 1: return "背包里没有这件物品，可以去商店购买。"
+	if item.is_empty() or data.inventory.get(id,0) < 1: return "库存不足，去商店补充吧。"
 	var effective = false
 	for key in ["food","clean","mood"]:
 		if item[key] > 0 and data[key] < 99.999: effective = true
-	if not effective: return "状态已经满满的，先把它留着吧。"
+	if not effective: return "状态已满。"
 	data.inventory[id] -= 1
 	for key in ["food","clean","mood"]: data[key] = minf(100,data[key]+item[key])
 	data.stats["wash" if item.clean > 0 else "feed"] += 1
@@ -253,7 +253,7 @@ func add_xp(value: float):
 		data.xp = maxf(0,data.xp-C.next_xp(int(data.level)))
 		data.level += 1
 		data.coins += 10+int(data.level)*2
-		message.emit("升级到 Lv.%d！获得 %d 金币。" % [data.level,10+int(data.level)*2])
+		message.emit("Lv.%d！ +%d 金币" % [data.level,10+int(data.level)*2])
 	if data.level == 20: data.xp = 0.0
 
 func achievement_values() -> Array:

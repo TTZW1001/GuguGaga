@@ -228,6 +228,7 @@ func _process(delta: float):
 	var blink = idle_blink(delta)
 	if blink > 0: close_eyes(blink)
 	if low_mood and action.is_empty():turn_bone("head_x",Vector3.RIGHT,0.06)
+	torso.rotation.y += view_yaw
 	for name_ in expression_weights: face.set_blend_shape_value(morphs[name_],expression_weights[name_])
 	skeleton.force_update_all_bone_transforms()
 	for i in bubbles.size():
