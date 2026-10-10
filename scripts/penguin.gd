@@ -148,42 +148,60 @@ func update_accessories(head_id: String, neck_id: String, golden: bool):
 	var red = material("c97764")
 	var yellow = material("e5b649",0.35)
 	if head_id == "redhat":
-		orb(hat,Vector3(0,0.49,0),Vector3(1.03,0.28,0.83),red)
-		orb(hat,Vector3(0,0.64,-0.02),Vector3(0.73,0.38,0.65),red)
-		orb(hat,Vector3(0.23,0.84,0),Vector3.ONE*0.15,material("fff5df"))
+		build_red_hat(red)
 	if head_id == "graduate":
-		box(hat,Vector3(0,0.57,0),Vector3(1.1,0.07,0.95),material("30404a"))
-		box(hat,Vector3(0,0.43,0),Vector3(0.6,0.23,0.5),material("30404a"))
-		box(hat,Vector3(0.5,0.41,0.35),Vector3(0.035,0.34,0.035),yellow)
+		build_graduate_hat(yellow)
 	if head_id == "crown":
-		var cylinder = CylinderMesh.new()
-		cylinder.top_radius = 0.36
-		cylinder.bottom_radius = 0.34
-		cylinder.height = 0.2
-		var mesh = MeshInstance3D.new()
-		mesh.mesh = cylinder
-		mesh.material_override = yellow
-		mesh.position.y = 0.57
-		hat.add_child(mesh)
-		for i in 5:
-			var a = TAU*i/5.0
-			orb(hat,Vector3(cos(a)*0.32,0.73,sin(a)*0.32),Vector3(0.12,0.3,0.12),yellow)
+		build_crown(yellow)
 	if neck_id == "scarf":
-		var scarf_mesh = TorusMesh.new()
-		scarf_mesh.inner_radius = 0.37
-		scarf_mesh.outer_radius = 0.56
-		var scarf_ring = MeshInstance3D.new()
-		scarf_ring.mesh = scarf_mesh
-		scarf_ring.material_override = material("bd7665")
-		scarf_ring.position = Vector3(0,1.43,0)
-		neck.add_child(scarf_ring)
-		box(neck,Vector3(0.26,1.17,0.56),Vector3(0.23,0.51,0.07),material("bd7665")).rotation.z = 0.15
+		build_scarf()
 	if neck_id == "bow":
-		for side in [-1,1]: orb(neck,Vector3(side*0.16,1.44,0.52),Vector3(0.32,0.24,0.12),red).rotation.z = side*0.25
-		orb(neck,Vector3(0,1.44,0.59),Vector3.ONE*0.15,red)
+		build_bow(red)
 	if neck_id == "tie":
-		orb(neck,Vector3(0,1.43,0.54),Vector3.ONE*0.17,material("6e90a2"))
-		box(neck,Vector3(0,1.17,0.6),Vector3(0.16,0.41,0.06),material("6e90a2"))
+		build_tie()
+
+func build_red_hat(red: StandardMaterial3D):
+	orb(hat,Vector3(0,0.49,0),Vector3(1.03,0.28,0.83),red)
+	orb(hat,Vector3(0,0.64,-0.02),Vector3(0.73,0.38,0.65),red)
+	orb(hat,Vector3(0.23,0.84,0),Vector3.ONE*0.15,material("fff5df"))
+
+func build_graduate_hat(yellow: StandardMaterial3D):
+	box(hat,Vector3(0,0.57,0),Vector3(1.1,0.07,0.95),material("30404a"))
+	box(hat,Vector3(0,0.43,0),Vector3(0.6,0.23,0.5),material("30404a"))
+	box(hat,Vector3(0.5,0.41,0.35),Vector3(0.035,0.34,0.035),yellow)
+
+func build_crown(yellow: StandardMaterial3D):
+	var cylinder = CylinderMesh.new()
+	cylinder.top_radius = 0.36
+	cylinder.bottom_radius = 0.34
+	cylinder.height = 0.2
+	var mesh = MeshInstance3D.new()
+	mesh.mesh = cylinder
+	mesh.material_override = yellow
+	mesh.position.y = 0.57
+	hat.add_child(mesh)
+	for i in 5:
+		var a = TAU*i/5.0
+		orb(hat,Vector3(cos(a)*0.32,0.73,sin(a)*0.32),Vector3(0.12,0.3,0.12),yellow)
+
+func build_scarf():
+	var scarf_mesh = TorusMesh.new()
+	scarf_mesh.inner_radius = 0.37
+	scarf_mesh.outer_radius = 0.56
+	var scarf_ring = MeshInstance3D.new()
+	scarf_ring.mesh = scarf_mesh
+	scarf_ring.material_override = material("bd7665")
+	scarf_ring.position = Vector3(0,1.43,0)
+	neck.add_child(scarf_ring)
+	box(neck,Vector3(0.26,1.17,0.56),Vector3(0.23,0.51,0.07),material("bd7665")).rotation.z = 0.15
+
+func build_bow(red: StandardMaterial3D):
+	for side in [-1,1]: orb(neck,Vector3(side*0.16,1.44,0.52),Vector3(0.32,0.24,0.12),red).rotation.z = side*0.25
+	orb(neck,Vector3(0,1.44,0.59),Vector3.ONE*0.15,red)
+
+func build_tie():
+	orb(neck,Vector3(0,1.43,0.54),Vector3.ONE*0.17,material("6e90a2"))
+	box(neck,Vector3(0,1.17,0.6),Vector3(0.16,0.41,0.06),material("6e90a2"))
 
 func _process(delta: float):
 	time += delta

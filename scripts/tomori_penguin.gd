@@ -7,6 +7,12 @@ var morphs: Dictionary = {}
 var expression_weights: Dictionary = {}
 var blink_wait = 3.0
 var blink_elapsed = -1.0
+var red_hood: Node3D
+var graduation_cap: Node3D
+var small_crown: Node3D
+var red_scarf: Node3D
+var red_bow: Node3D
+var blue_tie: Node3D
 
 func _ready():
 	rng.randomize()
@@ -67,9 +73,61 @@ func find_parts(node: Node):
 	for child in node.get_children(): find_parts(child)
 
 func update_accessories(head_id: String, neck_id: String, golden: bool):
-	# Grandparent's simple accessories remain anchored to animated bones.
 	super.update_accessories(head_id,neck_id,golden)
+	if is_instance_valid(red_hood): red_hood.visible = head_id == "redhat"
+	if is_instance_valid(graduation_cap): graduation_cap.visible = head_id == "graduate"
+	if is_instance_valid(small_crown): small_crown.visible = head_id == "crown"
+	if is_instance_valid(red_scarf): red_scarf.visible = neck_id == "scarf"
+	if is_instance_valid(red_bow): red_bow.visible = neck_id == "bow"
+	if is_instance_valid(blue_tie): blue_tie.visible = neck_id == "tie"
 	for mat in body_materials: mat.albedo_color = Color("e1bf70" if golden else "ffffff")
+
+func build_red_hat(_red: StandardMaterial3D):
+	if is_instance_valid(red_hood): return
+	# Reuse the character skeleton: the hood follows the head, while its lower
+	# cloth blends through neck to spine instead of rotating as a rigid hat.
+	red_hood = load_skinned_accessory("res://assets/accessories/red_hood.glb","RedHood")
+
+func build_graduate_hat(_yellow: StandardMaterial3D):
+	if is_instance_valid(graduation_cap): return
+	graduation_cap = load_skinned_accessory("res://assets/accessories/graduation_cap.glb","GraduationCap")
+
+func build_crown(_yellow: StandardMaterial3D):
+	if is_instance_valid(small_crown): return
+	small_crown = load_skinned_accessory("res://assets/accessories/small_crown.glb","SmallCrown")
+
+func build_scarf():
+	if is_instance_valid(red_scarf): return
+	red_scarf = load_skinned_accessory("res://assets/accessories/red_scarf.glb","RedScarf")
+
+func build_bow(_red: StandardMaterial3D):
+	if is_instance_valid(red_bow): return
+	red_bow = load_skinned_accessory("res://assets/accessories/red_bow.glb","RedBow")
+
+func build_tie():
+	if is_instance_valid(blue_tie): return
+	blue_tie = load_skinned_accessory("res://assets/accessories/blue_tie.glb","BlueTie")
+
+func load_skinned_accessory(path: String, node_name: String) -> Node3D:
+	var source = load(path).instantiate()
+	model.add_child(source)
+	var source_skeleton = source.find_children("*","Skeleton3D",true,false)[0] as Skeleton3D
+	var accessory = Node3D.new()
+	accessory.name = node_name
+	skeleton.add_child(accessory)
+	for mesh in source.find_children("*","MeshInstance3D",true,false):
+		var relative = source_skeleton.global_transform.affine_inverse()*mesh.global_transform
+		var skin = mesh.skin.duplicate() as Skin
+		for i in skin.get_bind_count():
+			var bone_name = skin.get_bind_name(i)
+			if bone_name.is_empty(): bone_name = source_skeleton.get_bone_name(skin.get_bind_bone(i))
+			skin.set_bind_name(i,bone_name)
+		mesh.reparent(accessory,false)
+		mesh.transform = relative
+		mesh.skin = skin
+		mesh.skeleton = mesh.get_path_to(skeleton)
+	source.free()
+	return accessory
 
 func set_expression(name_: String, value: float):
 	if morphs.has(name_): expression_weights[name_] = clampf(value,0,1)
