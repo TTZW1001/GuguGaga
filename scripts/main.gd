@@ -803,14 +803,15 @@ func dress_panel():
 		if a[0]=="none":row_text("头饰" if a[2]=="head" else "颈饰",15)
 		var unlocked=game.accessory_unlocked(a)
 		var condition="Lv.%d" % a[3] if a[4]=="" else "三好学生成就" if a[4]=="all60" else "职场达人成就"
-		var text_=a[1]+("  ✓" if game.data[a[2]]==a[0] else "" if unlocked else "  ·  "+condition)
+		var text_=a[1]+("  ✓" if game.data[a[2]]==a[0] and not game.data.gold else "" if unlocked else "  ·  "+condition)
 		var b=button(text_,func():game.equip(a);set_profile_tab("dress"))
 		b.disabled=not unlocked
 		panel_body.add_child(b)
 	divider()
-	var gold_button=button("金色外观"+(" · Lv.20" if game.data.level<20 else "  ✓" if game.data.gold else ""),func():game.data.gold=not game.data.gold;game.commit();set_profile_tab("dress"))
+	var gold_button=button("高雅人士套装"+(" · Lv.20" if game.data.level<20 else "  ✓" if game.data.gold else ""),func():game.data.gold=not game.data.gold;game.commit();set_profile_tab("dress"))
 	gold_button.disabled=game.data.level<20
 	panel_body.add_child(gold_button)
+	if game.data.gold: row_text("整套穿戴中 · 选择配饰可换回日常装扮",13,Color("8a8b78"))
 
 func settings_panel():
 	row_text("显示",16)

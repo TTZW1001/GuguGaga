@@ -278,4 +278,5 @@ func accessory_unlocked(a: Array) -> bool:
 func equip(a: Array):
 	if not accessory_unlocked(a): return
 	data[a[2]] = a[0]
+	data.gold = false
 	commit()

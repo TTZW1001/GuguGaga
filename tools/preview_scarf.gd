@@ -62,7 +62,7 @@ func make_view(angle: float, close: bool, pose: String = "") -> SubViewport:
 	check(pet.red_hood.visible and pet.red_scarf.visible and not pet.graduation_cap.visible and not pet.small_crown.visible,"approved hood and scarf coexist")
 	pet.update_accessories("none","none",false)
 	check(not pet.red_hood.visible and not pet.graduation_cap.visible and not pet.red_scarf.visible,"unequip hides scarf and headwear")
-	pet.update_accessories("crown","bow",true)
+	pet.update_accessories("crown","bow",false)
 	check(not pet.red_scarf.visible and pet.small_crown.visible and pet.red_bow.visible,"bow replaces scarf without changing crown")
 	pet.update_accessories("none","scarf",false)
 	pet.update_accessories("none","scarf",false)

@@ -170,14 +170,39 @@ func run():
 	s.check_achievements()
 	near(s.data.coins,capcoins,"level cap and reward idempotence")
 	for a in C.ACCESSORIES: expect(s.accessory_unlocked(a),"accessory "+a[1])
+	s.data.gold=true
+	s.data.neck="tie"
+	s.equip(C.ACCESSORIES[1])
+	expect(not s.data.gold,"selecting unlocked accessory exits complete suit")
+	expect(s.data.neck=="tie","switching headwear preserves saved neck choice")
+	var locked=make()
+	locked.data.gold=true
+	locked.equip(C.ACCESSORIES[1])
+	expect(locked.data.gold,"locked accessory cannot change complete suit")
 	var total=0.0
 	for lv in range(1,20):total+=C.next_xp(lv)
 	print("Lv20 EXP=",total,"; days at 1.5h/day intermediate=",total/(90*6))
 	expect(total/(90*6)>=30 and total/(90*6)<=60,"growth 1-2 months simulation")
 	test_persistence()
+	test_elegant_save()
 	test_long_term()
 	print("STATE_TESTS ",checks," checks, ",failures.size()," failures")
 	quit(0 if failures.is_empty() else 1)
+
+func test_elegant_save():
+	var original=make()
+	original.path="res://tests/runtime/elegant-save-test.json"
+	original.autosave=true
+	original.data.level=20
+	original.data.gold=true
+	original.data.head="redhat"
+	original.data.neck="tie"
+	expect(original.save(),"complete suit saves through legacy gold flag")
+	var restored=State.new()
+	restored.path=original.path
+	expect(restored.load_game(T),"complete suit save reloads")
+	expect(restored.data.gold,"complete suit remains selected after reload")
+	expect(restored.data.head=="redhat" and restored.data.neck=="tie","complete suit retains underlying accessory choices")
 
 func test_persistence():
 	var s=make()

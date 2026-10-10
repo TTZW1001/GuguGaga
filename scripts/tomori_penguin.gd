@@ -13,6 +13,7 @@ var small_crown: Node3D
 var red_scarf: Node3D
 var red_bow: Node3D
 var blue_tie: Node3D
+var elegant_suit: Node3D
 
 func _ready():
 	rng.randomize()
@@ -73,14 +74,22 @@ func find_parts(node: Node):
 	for child in node.get_children(): find_parts(child)
 
 func update_accessories(head_id: String, neck_id: String, golden: bool):
-	super.update_accessories(head_id,neck_id,golden)
+	# Retain the saved head/neck choices underneath this complete skin. The old
+	# gold flag remains the save-compatible Lv.20 unlock for the elegant suit.
+	if golden:
+		head_id = "none"
+		neck_id = "none"
+		if not is_instance_valid(elegant_suit):
+			elegant_suit = load_skinned_accessory("res://assets/accessories/elegant_suit.glb","ElegantSuit")
+	if is_instance_valid(elegant_suit): elegant_suit.visible = golden
+	super.update_accessories(head_id,neck_id,false)
 	if is_instance_valid(red_hood): red_hood.visible = head_id == "redhat"
 	if is_instance_valid(graduation_cap): graduation_cap.visible = head_id == "graduate"
 	if is_instance_valid(small_crown): small_crown.visible = head_id == "crown"
 	if is_instance_valid(red_scarf): red_scarf.visible = neck_id == "scarf"
 	if is_instance_valid(red_bow): red_bow.visible = neck_id == "bow"
 	if is_instance_valid(blue_tie): blue_tie.visible = neck_id == "tie"
-	for mat in body_materials: mat.albedo_color = Color("e1bf70" if golden else "ffffff")
+	for mat in body_materials: mat.albedo_color = Color.WHITE
 
 func build_red_hat(_red: StandardMaterial3D):
 	if is_instance_valid(red_hood): return
