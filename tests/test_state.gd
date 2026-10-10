@@ -176,9 +176,23 @@ func run():
 	expect(not s.data.gold,"selecting unlocked accessory exits complete suit")
 	expect(s.data.neck=="tie","switching headwear preserves saved neck choice")
 	var locked=make()
+	locked.set_suit(true)
+	expect(not locked.data.gold,"complete suit locked below Lv20")
 	locked.data.gold=true
 	locked.equip(C.ACCESSORIES[1])
 	expect(locked.data.gold,"locked accessory cannot change complete suit")
+	s.data.head="crown"
+	s.data.neck="bow"
+	s.set_suit(true)
+	expect(s.data.gold and s.data.head=="crown" and s.data.neck=="bow","complete suit remembers both accessory choices")
+	s.set_suit(false)
+	expect(not s.data.gold and s.data.head=="crown" and s.data.neck=="bow","removing suit restores remembered choices")
+	s.set_suit(true)
+	s.equip(C.ACCESSORIES[6])
+	expect(not s.data.gold and s.data.neck=="bow","neck selection exits suit")
+	s.set_suit(true)
+	s.equip(C.ACCESSORIES[0])
+	expect(not s.data.gold and s.data.head=="none","empty accessory selection exits suit")
 	var total=0.0
 	for lv in range(1,20):total+=C.next_xp(lv)
 	print("Lv20 EXP=",total,"; days at 1.5h/day intermediate=",total/(90*6))
@@ -203,6 +217,10 @@ func test_elegant_save():
 	expect(restored.load_game(T),"complete suit save reloads")
 	expect(restored.data.gold,"complete suit remains selected after reload")
 	expect(restored.data.head=="redhat" and restored.data.neck=="tie","complete suit retains underlying accessory choices")
+	restored.set_suit(false)
+	var third=State.new()
+	third.path=original.path
+	expect(third.load_game(T) and not third.data.gold and third.data.head=="redhat" and third.data.neck=="tie","removing suit persists and restores choices after restart")
 
 func test_persistence():
 	var s=make()

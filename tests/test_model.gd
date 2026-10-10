@@ -65,10 +65,42 @@ func run():
 		expect(chest_motion<0.006,"rest chest silhouette preserved during "+("idle" if action=="" else action))
 		if action=="wing_l": expect(right_motion>0.1 and left_motion<0.001,"left interaction moves its flipper independently")
 		if action=="wing_r": expect(left_motion>0.1 and right_motion<0.001,"right interaction moves its flipper independently")
+	test_accessories(pet)
 	pet.free()
 	await capture_poses()
 	print("MODEL_TESTS ",checks," checks, ",failed," failures")
 	quit(0 if failed==0 else 1)
+
+func test_accessories(pet: Node3D):
+	var choices=[["redhat","scarf","red_hood","red_scarf"],["graduate","tie","graduation_cap","blue_tie"],["crown","bow","small_crown","red_bow"]]
+	for choice in choices:
+		pet.update_accessories(choice[0],choice[1],false)
+		for key in [choice[2],choice[3]]:
+			var accessory=pet.get(key)
+			expect(is_instance_valid(accessory) and accessory.visible,"remodeled accessory visible: "+key)
+			check_skin(pet,accessory,key)
+		pet.update_accessories(choice[0],choice[1],true)
+		expect(pet.elegant_suit.visible and not pet.get(choice[2]).visible and not pet.get(choice[3]).visible,"suit hides head and neck: "+choice[0])
+		var cached=pet.elegant_suit
+		pet.update_accessories(choice[0],choice[1],false)
+		expect(not cached.visible and pet.get(choice[2]).visible and pet.get(choice[3]).visible,"removing suit restores both slots: "+choice[0])
+		pet.update_accessories(choice[0],choice[1],true)
+		expect(pet.elegant_suit==cached,"suit reuses cached mesh")
+	check_skin(pet,pet.elegant_suit,"elegant_suit")
+	pet.update_accessories("none","none",false)
+	for key in ["red_hood","graduation_cap","small_crown","red_scarf","red_bow","blue_tie","elegant_suit"]:
+		expect(not pet.get(key).visible,"unequipped model hidden: "+key)
+	for mat in pet.body_materials:expect(mat.albedo_color==Color.WHITE,"original body color preserved")
+
+func check_skin(pet: Node3D, accessory: Node3D, title: String):
+	var meshes=accessory.find_children("*","MeshInstance3D",true,false)
+	expect(not meshes.is_empty(),title+" has actual mesh")
+	for mesh in meshes:
+		expect(mesh.get_node(mesh.skeleton)==pet.skeleton,title+" uses live pet skeleton")
+		var binds_ok=mesh.skin.get_bind_count()>0
+		for i in mesh.skin.get_bind_count():
+			binds_ok=binds_ok and pet.skeleton.find_bone(mesh.skin.get_bind_name(i))>=0
+		expect(binds_ok,title+" all skin binds resolve")
 
 func capture_poses():
 	var canvas = SubViewport.new()

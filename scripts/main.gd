@@ -808,10 +808,12 @@ func dress_panel():
 		b.disabled=not unlocked
 		panel_body.add_child(b)
 	divider()
-	var gold_button=button("高雅人士套装"+(" · Lv.20" if game.data.level<20 else "  ✓" if game.data.gold else ""),func():game.data.gold=not game.data.gold;game.commit();set_profile_tab("dress"))
-	gold_button.disabled=game.data.level<20
-	panel_body.add_child(gold_button)
-	if game.data.gold: row_text("整套穿戴中 · 选择配饰可换回日常装扮",13,Color("8a8b78"))
+	row_text("套装",15)
+	var suit_button=button("高雅人士"+(" · Lv.20" if game.data.level<20 else "  ✓" if game.data.gold else ""),func():game.set_suit(not game.data.gold);set_profile_tab("dress"))
+	suit_button.tooltip_text="再次点击脱下" if game.data.gold else "与头饰、颈饰互斥"
+	suit_button.disabled=game.data.level<20
+	panel_body.add_child(suit_button)
+	if game.data.gold: row_text("再次点击脱下，或选择头饰、颈饰切换。",13,Color("8a8b78"))
 
 func settings_panel():
 	row_text("显示",16)

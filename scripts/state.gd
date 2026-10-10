@@ -280,3 +280,10 @@ func equip(a: Array):
 	data[a[2]] = a[0]
 	data.gold = false
 	commit()
+
+func set_suit(enabled: bool):
+	if enabled and data.level < 20: return
+	# Keep the legacy field and previous accessory choices for existing saves.
+	# Rendering hides both slots while the suit is active.
+	data.gold = enabled
+	commit()

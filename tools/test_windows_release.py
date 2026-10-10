@@ -1,12 +1,12 @@
 """Exercise the exported Windows executable through native window messages."""
-import argparse, ctypes, json, os, pathlib, subprocess, time
+import argparse, ctypes, hashlib, json, os, pathlib, subprocess, time
 from ctypes import wintypes
 import psutil
 from PIL import ImageGrab
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/养一只咕咕嘎嘎吧！-1.1.0.exe')
+parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/养一只咕咕嘎嘎吧！-1.2.0.exe')
 EXE = parser.parse_args().exe.resolve()
 RUNTIME = ROOT / ('tests/runtime/release-' + str(time.time_ns()))
 OUTPUT = ROOT / 'tests/output'
@@ -94,6 +94,15 @@ def key(hwnd, code):
     time.sleep(0.04)
     user32.PostMessageW(hwnd, 0x101, code, 1 | (scan << 16) | (3 << 30))
     time.sleep(0.04)
+
+def scroll_bottom(hwnd):
+    w, h = dimensions(hwnd)
+    scale = min(w/1280, h/720)
+    point = wintypes.POINT(int((w-1280*scale)/2+820*scale), int((h-720*scale)/2+460*scale))
+    user32.ClientToScreen(hwnd, ctypes.byref(point))
+    for _ in range(40):
+        user32.PostMessageW(hwnd, 0x20A, (-120 & 0xffff) << 16, (point.x & 0xffff) | ((point.y & 0xffff) << 16))
+    time.sleep(0.5)
 
 def capture(hwnd, name):
     w, h = dimensions(hwnd)
@@ -193,6 +202,35 @@ try:
     after_crash = save_data()
     expect(after_crash['task'].get('id') == 'read', 'forced termination restores last committed task')
     expect(after_crash['coins'] == 605, 'forced termination preserves escrow without double charge')
+    close(proc, hwnd)
+    proc = None
+    # These fixtures use the original save schema, including the old gold flag.
+    # Load every new GLB from the embedded release package, not from res:// source.
+    fixture = save_data()
+    fixture.update(level=20, xp=0, power=60, mind=60, charm=60, task={})
+    for head, neck, suit in [('redhat', 'scarf', False), ('graduate', 'tie', False), ('crown', 'bow', False), ('crown', 'bow', True)]:
+        fixture.update(head=head, neck=neck, gold=suit, last=time.time())
+        payload = json.dumps(fixture, ensure_ascii=False, separators=(',', ':'))
+        file.write_text(json.dumps({'payload': payload, 'sha256': hashlib.sha256(payload.encode('utf-8')).hexdigest()}, ensure_ascii=False), encoding='utf-8')
+        proc, hwnd = start()
+        restored = save_data()
+        expect(restored['gold']==suit and restored['head']==head and restored['neck']==neck, 'legacy outfit fixture loads: '+head+'/'+neck+('/suit' if suit else ''))
+        capture(hwnd, 'release-v120-'+('suit' if suit else head)+'.png')
+        if suit:
+            click(hwnd, 110, 42)
+            click(hwnd, 1016, 210)
+            scroll_bottom(hwnd)
+            capture(hwnd, 'release-v120-suit-profile.png')
+            click(hwnd, 820, 520)
+            expect(wait_until(lambda: not save_data()['gold']), 'native suit button removes outfit and saves')
+            expect(save_data()['head']=='crown' and save_data()['neck']=='bow', 'native suit removal preserves accessory choices')
+            scroll_bottom(hwnd)
+            click(hwnd, 820, 540)
+            expect(wait_until(lambda: save_data()['gold']), 'native suit button equips outfit and saves')
+        close(proc, hwnd)
+        proc = None
+    proc, hwnd = start()
+    expect(save_data()['gold'], 'native suit remains equipped after restart')
     close(proc, hwnd)
     proc = None
     errors = '\n'.join(file.read_text(encoding='utf-8', errors='replace') for file in engine_logs)
