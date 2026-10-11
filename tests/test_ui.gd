@@ -58,8 +58,10 @@ func wheel(node: Control, times: int):
 
 func run():
 	app=load("res://main.tscn").instantiate()
-	root.add_child(app)
+	# Keep UI exercises isolated from the player's save, including _ready/load.
+	app.game.path="res://tests/output/ui-penguin.json"
 	app.game.autosave=false
+	root.add_child(app)
 	app.game.data=app.game.fresh(app.now())
 	app.refresh()
 	app.adopt_box.show()
@@ -138,6 +140,7 @@ func run():
 	await tap(app.item_buttons.fish)
 	await tap(app.item_buttons.fish)
 	expect(app.item_menu.visible and app.game.data.inventory.fish==1,"repeat feeding keeps menu open and deducts each item")
+	expect(app.pet.feed_food_id=="fish","feeding menu selects the matching held food model")
 	expect(app.item_buttons.fish.get_node("Copy/Name").text.ends_with("×1"),"menu quantity refreshes immediately")
 	await tap(app.item_buttons.bread)
 	expect(app.item_menu.visible and not app.menu_error.text.is_empty(),"missing stock reports error in menu")
@@ -176,9 +179,28 @@ func run():
 	await tap(find_button(app.hud,"喂食"))
 	await tap(app.item_buttons.fish)
 	expect(app.game.data.task.get("id")=="read" and app.pet.action=="feed","care does not interrupt task")
+	var care_elapsed=app.game.data.task.elapsed
 	await press_escape()
-	await wait(2.6)
+	await wait(app.pet.action_left+0.2)
 	expect(app.pet.book.visible and app.pet.action.is_empty(),"care returns to study animation")
+	expect(app.game.data.task.elapsed>care_elapsed+3,"study timer continues throughout feeding")
+	await tap(find_button(app.hud,"洗澡"))
+	await tap(app.item_buttons.soap)
+	expect(app.game.data.task.get("id")=="read" and app.pet.action=="wash","bathing retains the active study task")
+	await press_escape()
+	await wait(app.pet.action_left+0.2)
+	expect(app.pet.book.visible and app.pet.book.scale.is_equal_approx(Vector3.ONE) and app.pet.action.is_empty(),"bathing restores the original study pose and props")
+	var original_level=app.game.data.level
+	app.game.data.level=2
+	await tap(app.info)
+	await wait(0.3)
+	await tap(find_button(app.panel_body,"转圈"))
+	expect(not app.modal.visible and app.pet.action=="spin" and app.game.data.task.get("id")=="read","manual Lv2 spin starts without ending the task")
+	var spin_elapsed=app.game.data.task.elapsed
+	await wait(app.pet.action_left+0.2)
+	expect(app.pet.action.is_empty() and app.pet.book.visible and app.pet.book.scale.is_equal_approx(Vector3.ONE),"stepping spin returns to the study pose")
+	expect(app.game.data.task.elapsed>spin_elapsed+3,"study timer continues throughout the stepping spin")
+	app.game.data.level=original_level
 	var elapsed=app.game.data.task.elapsed
 	await mouse(ground,true)
 	await motion(ground+Vector2(60,0),Vector2(60,0))
@@ -193,7 +215,6 @@ func run():
 	expect(app.game.data.task.is_empty() and app.idle_actions.visible and not app.task_box.visible,"settlement restores action buttons")
 	await tap(app.info)
 	await wait(0.3)
-	app.game.path="user://ui-penguin.json"
 	app.game.autosave=true
 	expect(app.preview_pane.visible and app.tabs.visible and app.panel.size.x==1000,"profile has wider split layout")
 	app.name_edit.grab_focus()

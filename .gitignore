@@ -10,3 +10,5 @@ tools/source/
 assets/penguin/
 tests/output/
 tests/runtime/
+__pycache__/
+*.py[cod]

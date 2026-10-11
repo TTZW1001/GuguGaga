@@ -73,7 +73,7 @@ lining = material('Coat dark lining','101319',.88)
 
 def skin(obj, mode):
     obj.parent = rig
-    groups = {name: obj.vertex_groups.new(name=name) for name in ['head_x','neck_x','spine_01_x','arm_stretch_l','arm_stretch_r']}
+    groups = {name: obj.vertex_groups.new(name=name) for name in ['head_x','neck_x','spine_01_x','arm_stretch_l','arm_stretch_r','forearm_stretch_l','forearm_stretch_r']}
     for v in obj.data.vertices:
         if mode == 'head':
             weights = {'head_x':1}
@@ -311,6 +311,7 @@ for hole in holes:
     centre = sum(root_points,Vector())/len(root_points)
     sign = 1 if centre.x>0 else -1
     bone_name = 'arm_stretch_l' if sign>0 else 'arm_stretch_r'
+    elbow_name = 'forearm_stretch_l' if sign>0 else 'forearm_stretch_r'
     hinge = rig.data.bones[bone_name].head_local.copy()
     axis = Vector((sign*math.cos(1.25),0,-math.sin(1.25)))
     across = Vector((sign*math.sin(1.25),0,math.cos(1.25)))
@@ -341,12 +342,16 @@ for hole in holes:
         n = max(0,min(1,(v.co.z-.46)/.13))*.58
         for group in sleeve.vertex_groups:
             group.remove([v.index])
-        sleeve.vertex_groups[bone_name].add([v.index],amount,'REPLACE')
+        along = (v.co-hinge).dot(axis)
+        fold = max(0,min(1,(along-.15)/.10))
+        fold = fold*fold*(3-2*fold)
+        sleeve.vertex_groups[bone_name].add([v.index],amount*(1-fold),'REPLACE')
+        sleeve.vertex_groups[elbow_name].add([v.index],amount*fold,'REPLACE')
         sleeve.vertex_groups['neck_x'].add([v.index],n*(1-amount),'REPLACE')
         sleeve.vertex_groups['spine_01_x'].add([v.index],(1-n)*(1-amount),'REPLACE')
     cuff = tube('Coat_turned_cuff_'+str(sign),sleeve_vertices[-L:],.0032,satin,'torso',closed=True,segments=8)
     for group in cuff.vertex_groups: group.remove(list(range(len(cuff.data.vertices))))
-    cuff.vertex_groups[bone_name].add(list(range(len(cuff.data.vertices))),1,'REPLACE')
+    cuff.vertex_groups[elbow_name].add(list(range(len(cuff.data.vertices))),1,'REPLACE')
 
 # The back collar rises around the lower hair envelope. Its flared top gives
 # the bob haircut clearance, including a nod and a small turn of the head.
@@ -447,8 +452,8 @@ for gltf_skin in doc['skins']:
     start = binary_start+view.get('byteOffset',0)+accessor.get('byteOffset',0)
     for i,node_index in enumerate(gltf_skin['joints']):
         name = doc['nodes'][node_index]['name']
-        if name not in ('arm_stretch_l','arm_stretch_r'): continue
-        hinge = rig.data.bones[name].head_local
+        if name not in ('arm_stretch_l','arm_stretch_r','forearm_stretch_l','forearm_stretch_r'): continue
+        hinge = rig.data.bones['arm_stretch_'+name[-1]].head_local
         angle = 1.25 if name.endswith('_l') else -1.25
         delta = Matrix.Translation(hinge) @ Quaternion((0,1,0),angle).to_matrix().to_4x4() @ Matrix.Translation(-hinge)
         values = struct.unpack_from('<16f',data,start+64*i)

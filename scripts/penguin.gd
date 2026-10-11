@@ -133,6 +133,9 @@ func perform(name_: String, duration: float = 1.8):
 	action_left = duration
 	action_total = duration
 
+func feed_item(_item_id: String):
+	perform("feed",2.4)
+
 func update_task(kind: String, id: String):
 	task_kind = kind
 	task_id = id

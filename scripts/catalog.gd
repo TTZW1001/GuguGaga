@@ -18,16 +18,16 @@ const COURSES = [
 	["music","音乐课","charm",20,1800,15,10,7,5],
 	["combat","格斗训练","power",60,3600,35,25,18,12],
 	["science","科学研究","mind",60,3600,35,17,9,12],
-	["stage","舞台表演","charm",60,3600,35,20,14,12]
+	["stage","作词课","charm",60,3600,35,20,14,12]
 ]
 const JOBS = [
 	["flyer","发传单","power",0,900,20,8,5,0],
 	["carry","搬运工","power",20,1800,50,20,15,0],
-	["library","图书管理员","mind",20,1800,50,12,5,0],
-	["waiter","服务员","charm",20,1800,50,15,10,0],
-	["guard","保镖","power",60,3600,120,25,20,0],
+	["library","图书校对员","mind",20,1800,50,12,5,0],
+	["waiter","远程客服","charm",20,1800,50,15,10,0],
+	["guard","保安","power",60,3600,120,25,20,0],
 	["code","程序员","mind",60,3600,120,15,8,0],
-	["idol","偶像","charm",60,3600,120,20,14,0]
+	["idol","导游","charm",60,3600,120,20,14,0]
 ]
 # Total Lv.20 EXP = 27930: 52 days at 1.5h/day using intermediate activities.
 static func next_xp(level: int) -> float:

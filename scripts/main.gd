@@ -625,7 +625,8 @@ func toggle_menu(mode: String):
 			var error=game.use_item(item.id,now())
 			menu_error.text=error
 			if error.is_empty():
-				pet.perform("wash" if item.clean>0 else "feed",2.4)
+				if item.clean>0: pet.perform("wash",2.4)
+				else: pet.feed_item(item.id)
 				show_message("香香的。" if item.clean>0 else "啊呜！",2)
 			refresh()
 		)

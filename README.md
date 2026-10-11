@@ -16,4 +16,6 @@
 
 开发：用 Godot 4.6.2 打开 `project.godot`。导出模板位于 `tools/templates`，缺失时运行 `python tools/fetch_templates.py`。
 
+已确认的最新动作优化请通过 Godot 运行当前工程；现有 `1.2.0` EXE 和发行 ZIP 为动作优化前版本。动态预览入口：`build/动作预览/index.html`，保留各版对照。
+
 主角为用户提供的「企鹅高松灯.blend」，企鹅身体作者 Guilherme Navarro（CC BY 4.0）；备用模型作者 nicoma（CC BY 4.0）。来源、改动及引擎许可见 `assets/CREDITS.md` 和发行包 `素材署名.md`。
