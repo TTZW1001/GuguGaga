@@ -68,10 +68,10 @@ func run():
 	await wait(0.5)
 	expect(root.size.x*9==root.size.y*16,"initial window is 16:9")
 	expect(ProjectSettings.get_setting("application/config/name")=="养一只咕咕嘎嘎吧！","new game title")
-	expect(ProjectSettings.get_setting("application/config/version")=="1.3.0","release version 1.3.0")
+	expect(ProjectSettings.get_setting("application/config/version")=="1.3.2","release version 1.3.2")
 	expect(ProjectSettings.globalize_path("user://").replace("\\","/").contains("Godot/app_userdata/企鹅小日子/"),"renamed game keeps original save directory")
 	await capture("adoption")
-	await tap(find_button(app.ui,"领养"))
+	await tap(find_button(app.ui,"开始领养！"))
 	expect(app.game.data.adopted and not app.adopt_box.visible,"adoption through viewport input")
 	app.pet.target=Vector3.ZERO
 	app.pet.idle_left=10000
@@ -195,11 +195,13 @@ func run():
 	await tap(app.info)
 	await wait(0.3)
 	await tap(find_button(app.panel_body,"转圈"))
-	expect(not app.modal.visible and app.pet.action=="spin" and app.game.data.task.get("id")=="read","manual Lv2 spin starts without ending the task")
+	expect(app.modal.visible and app.preview_pet.action=="spin" and app.pet.action.is_empty() and app.game.data.task.get("id")=="read","Lv2 spin previews inside profile while main pet keeps studying")
 	var spin_elapsed=app.game.data.task.elapsed
-	await wait(app.pet.action_left+0.2)
-	expect(app.pet.action.is_empty() and app.pet.book.visible and app.pet.book.scale.is_equal_approx(Vector3.ONE),"stepping spin returns to the study pose")
-	expect(app.game.data.task.elapsed>spin_elapsed+3,"study timer continues throughout the stepping spin")
+	await capture("action_preview")
+	await wait(app.preview_pet.action_left+0.2)
+	expect(app.preview_pet.action.is_empty() and app.pet.book.visible and app.pet.book.scale.is_equal_approx(Vector3.ONE),"preview returns idle without changing main study pose")
+	expect(app.game.data.task.elapsed>spin_elapsed+3,"study timer continues throughout preview")
+	await press_escape()
 	app.game.data.level=original_level
 	var elapsed=app.game.data.task.elapsed
 	await mouse(ground,true)

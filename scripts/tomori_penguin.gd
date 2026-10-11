@@ -1494,13 +1494,14 @@ func _process(delta: float):
 	action_left = maxf(0,action_left-delta)
 	if action_left == 0: action = ""
 	idle_left -= delta
-	if idle_left <= 0 and task_kind.is_empty() and action.is_empty():
+	if autonomous_idle and idle_left <= 0 and task_kind.is_empty() and action.is_empty():
 		idle_left = rng.randf_range(8,15)
-		var pick = rng.randi_range(0,4)
-		if pick < 2: target = Vector3(rng.randf_range(-1.0,1.0),0,rng.randf_range(-0.12,0.16))
-		else:
-			perform(["look","yawn","hop"][pick-2],2.6)
-			idle_seen.emit()
+		if not try_unlocked_idle():
+			var pick = rng.randi_range(0,4)
+			if pick < 2: target = Vector3(rng.randf_range(-1.0,1.0),0,rng.randf_range(-0.12,0.16))
+			else:
+				perform(["look","yawn","hop"][pick-2],2.6)
+				idle_seen.emit()
 	var moving = position.distance_to(target)>0.025 and action.is_empty()
 	if moving:
 		var direction = target-position

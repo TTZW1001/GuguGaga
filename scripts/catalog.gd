@@ -1,4 +1,5 @@
 extends RefCounted
+const ACTIONS = [["spin","转圈",2],["dance","跳舞",5],["celebrate","庆祝",10]]
 
 const ATTR_NAMES = {"power":"武力", "mind":"智力", "charm":"魅力"}
 const ITEMS = [

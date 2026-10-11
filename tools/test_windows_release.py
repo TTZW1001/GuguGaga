@@ -6,7 +6,7 @@ from PIL import ImageGrab
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/养一只咕咕嘎嘎吧！-1.3.0.exe')
+parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/养一只咕咕嘎嘎吧！-1.3.2.exe')
 EXE = parser.parse_args().exe.resolve()
 RUNTIME = ROOT / ('tests/runtime/release-' + str(time.time_ns()))
 OUTPUT = ROOT / 'tests/output'
@@ -120,8 +120,9 @@ def save_data():
     return json.loads(json.loads(file.read_text(encoding='utf-8'))['payload'])
 
 def close(proc, hwnd):
-    user32.PostMessageW(hwnd, 0x10, 0, 0)
-    proc.wait(timeout=10)
+    if not user32.PostMessageW(hwnd, 0x10, 0, 0):
+        raise ctypes.WinError(ctypes.get_last_error())
+    proc.wait(timeout=30)
     expect(proc.returncode == 0, 'normal close exit code 0')
 
 proc = None
@@ -155,6 +156,18 @@ try:
     active = save_data()
     expect(active['task'].get('id') == 'read', 'native course selection starts fixed task')
     expect(active['coins'] == 605, 'course tuition escrow persisted')
+    click(hwnd, 70, 677)  # Settings, general tab.
+    capture(hwnd, 'release-settings-general.png')
+    click(hwnd, 880, 376)  # Disable background saving and persist preferences.
+    preferences = file.with_name('settings.cfg')
+    expect(wait_until(preferences.exists), 'exported settings create preferences file')
+    expect('background_saving=false' in preferences.read_text(encoding='utf-8'), 'native background saving switch persists')
+    click(hwnd, 820, 210)  # About tab.
+    capture(hwnd, 'release-settings-about.png')
+    scroll_bottom(hwnd)
+    capture(hwnd, 'release-settings-credits.png')
+    click(hwnd, 10, 350)
+    expect(save_data()['task'].get('id') == 'read', 'settings tabs preserve the running task')
     click(hwnd, 1210, 370)  # Feed popout during the course.
     click(hwnd, 920, 370)  # Fish, now effective because time has elapsed.
     expect(wait_until(lambda: save_data()['inventory']['fish']==2), 'native popout uses item during task')
@@ -195,6 +208,7 @@ try:
     expect(recovered['coins'] == 605, 'relaunch does not charge tuition twice')
     expect(recovered['name'] == '旧档咕咕' and recovered['inventory']['fish']==1, 'renamed release reads existing old-directory save')
     expect(len(recovered['achievements']) == 2, 'relaunch does not repeat achievement rewards')
+    expect('background_saving=false' in preferences.read_text(encoding='utf-8'), 'relaunch retains saved preferences')
     capture(hwnd, 'release_restart.png')
     proc.terminate()
     proc.wait(timeout=10)

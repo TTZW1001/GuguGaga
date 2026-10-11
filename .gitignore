@@ -12,3 +12,8 @@ tests/output/
 tests/runtime/
 __pycache__/
 *.py[cod]
+*.blend[0-9]
+*.dmp
+Thumbs.db
+desktop.ini
+.DS_Store

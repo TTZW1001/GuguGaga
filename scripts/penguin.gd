@@ -19,6 +19,8 @@ var action = ""
 var action_left = 0.0
 var action_total = 1.0
 var idle_left = 6.0
+var autonomous_idle = true
+var unlocked_idle_actions: Array[String] = []
 var target = Vector3.ZERO
 var task_kind = ""
 var task_id = ""
@@ -136,6 +138,13 @@ func perform(name_: String, duration: float = 1.8):
 func feed_item(_item_id: String):
 	perform("feed",2.4)
 
+func try_unlocked_idle() -> bool:
+	# A small part of idle events use earned actions; ordinary idle stays common.
+	if unlocked_idle_actions.is_empty() or rng.randf() >= 0.16:return false
+	perform(unlocked_idle_actions[rng.randi_range(0,unlocked_idle_actions.size()-1)],2.8)
+	idle_seen.emit()
+	return true
+
 func update_task(kind: String, id: String):
 	task_kind = kind
 	task_id = id
@@ -211,13 +220,14 @@ func _process(delta: float):
 	action_left = maxf(0,action_left-delta)
 	if action_left == 0: action = ""
 	idle_left -= delta
-	if idle_left <= 0 and task_kind.is_empty() and action.is_empty():
+	if autonomous_idle and idle_left <= 0 and task_kind.is_empty() and action.is_empty():
 		idle_left = rng.randf_range(7,13)
-		var pick = rng.randi_range(0,4)
-		if pick < 2: target = Vector3(rng.randf_range(-1.15,1.15),0,rng.randf_range(-0.15,0.2))
-		else:
-			perform(["look","yawn","hop"][pick-2],2.4)
-			idle_seen.emit()
+		if not try_unlocked_idle():
+			var pick = rng.randi_range(0,4)
+			if pick < 2: target = Vector3(rng.randf_range(-1.15,1.15),0,rng.randf_range(-0.15,0.2))
+			else:
+				perform(["look","yawn","hop"][pick-2],2.4)
+				idle_seen.emit()
 	var moving = position.distance_to(target) > 0.025 and action.is_empty()
 	if moving:
 		position = position.move_toward(target,delta*0.22)

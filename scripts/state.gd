@@ -10,7 +10,7 @@ var load_error = false
 var clicks: Array[float] = []
 
 func fresh(now: float) -> Dictionary:
-	return {"save_version":1,"adopted":false,"name":"小企鹅","coins":500.0,"food":100.0,"clean":100.0,"mood":100.0,"power":0.0,"mind":0.0,"charm":0.0,"level":1,"xp":0.0,"inventory":{"fish":3,"soap":2},"task":{},"achievements":[],"head":"none","neck":"none","gold":false,"last":now,"pet_at":0.0,"care_at":0.0,"stats":{"feed":0,"wash":0,"pet":0,"study":0.0,"work":0.0,"income":0.0,"full_study":0,"full_work":0,"watch":0,"poke":0,"night":0}}
+	return {"save_version":1,"adopted":false,"name":"小嘎嘎","coins":500.0,"food":100.0,"clean":100.0,"mood":100.0,"power":0.0,"mind":0.0,"charm":0.0,"level":1,"xp":0.0,"inventory":{"fish":3,"soap":2},"task":{},"achievements":[],"head":"none","neck":"none","gold":false,"last":now,"pet_at":0.0,"care_at":0.0,"stats":{"feed":0,"wash":0,"pet":0,"study":0.0,"work":0.0,"income":0.0,"full_study":0,"full_work":0,"watch":0,"poke":0,"night":0}}
 
 func adopt(pet_name: String, now: float):
 	if data.get("adopted",false): return
@@ -22,7 +22,7 @@ func adopt(pet_name: String, now: float):
 
 func clean_name(value: String) -> String:
 	var result = value.strip_edges().replace("\n", " ").replace("\r", " ").substr(0,12)
-	return "小企鹅" if result.is_empty() else result
+	return "小嘎嘎" if result.is_empty() else result
 
 func rename(value: String):
 	data.name = clean_name(value)
@@ -150,7 +150,7 @@ func start_task(kind: String, id: String, now: float) -> String:
 	advance(now)
 	if not data.task.is_empty(): return "请先完成或结束当前任务。"
 	var cfg = C.task(kind,id)
-	if cfg.is_empty(): return "找不到这项任务。"
+	if cfg.is_empty(): return "找不到TAT"
 	var missing: Array[String] = []
 	if data[cfg.attr]+0.00001 < cfg.need: missing.append("%s还差 %.1f" % [C.ATTR_NAMES[cfg.attr],cfg.need-data[cfg.attr]])
 	if data.food+0.00001 < cfg.food: missing.append("饱食还差 %.1f" % (cfg.food-data.food))
@@ -193,8 +193,8 @@ func settle_task(early: bool):
 func buy(id: String, now: float) -> String:
 	advance(now)
 	var item = C.item(id)
-	if item.is_empty(): return "找不到商品。"
-	if data.coins+0.00001 < item.price: return "可用金币不足。"
+	if item.is_empty(): return "找不到TAT"
+	if data.coins+0.00001 < item.price: return "金币不够噜QAQ"
 	data.coins -= item.price
 	data.inventory[id] = data.inventory.get(id,0)+1
 	commit()
@@ -207,7 +207,7 @@ func use_item(id: String, now: float) -> String:
 	var effective = false
 	for key in ["food","clean","mood"]:
 		if item[key] > 0 and data[key] < 99.999: effective = true
-	if not effective: return "状态已满。"
+	if not effective: return "现在很舒服啦！不需要噜♪"
 	data.inventory[id] -= 1
 	for key in ["food","clean","mood"]: data[key] = minf(100,data[key]+item[key])
 	data.stats["wash" if item.clean > 0 else "feed"] += 1

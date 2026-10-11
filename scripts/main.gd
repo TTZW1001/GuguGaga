@@ -12,6 +12,7 @@ var pet: Node3D
 var info: Button
 var coins: Label
 var level_label: Label
+var xp_label: Label
 var xp_bar: ProgressBar
 var attributes: Label
 var status_bars: Dictionary = {}
@@ -40,6 +41,12 @@ var previous_focus: Control
 var tabs: HBoxContainer
 var tab_buttons: Dictionary = {}
 var profile_tab = "profile"
+var settings_tabs: HBoxContainer
+var settings_buttons: Dictionary = {}
+var settings_tab = "general"
+var settings_path = "user://settings.cfg"
+var preferences = {"window_width":0,"fps":60,"background_saving":true}
+var window_focused = true
 var name_edit: LineEdit
 var preview_pane: Control
 var preview_viewport: SubViewport
@@ -69,8 +76,9 @@ var pending_messages: Array[String] = []
 func now() -> float: return Time.get_unix_time_from_system()
 
 func _ready():
-	Engine.max_fps = 60
-	configure_window()
+	load_preferences()
+	apply_window_size()
+	apply_frame_limit()
 	get_tree().auto_accept_quit = false
 	game.message.connect(show_message)
 	game.changed.connect(refresh)
@@ -99,6 +107,35 @@ func configure_window():
 	var desired=Vector2i(int(width),int(width*9.0/16.0))
 	get_window().size=desired
 	DisplayServer.window_set_position(usable.position+(usable.size-desired)/2)
+
+func load_preferences():
+	var cfg=ConfigFile.new()
+	if cfg.load(settings_path)!=OK:return
+	var width=cfg.get_value("general","window_width",0)
+	var fps=cfg.get_value("general","fps",60)
+	var saving=cfg.get_value("general","background_saving",true)
+	if width in [0,1280,1600,1920]:preferences.window_width=int(width)
+	if fps in [30,60]:preferences.fps=int(fps)
+	if saving is bool:preferences.background_saving=saving
+
+func save_preferences():
+	var cfg=ConfigFile.new()
+	for key in preferences:cfg.set_value("general",key,preferences[key])
+	if cfg.save(settings_path)!=OK:show_message("设置保存失败，请检查存档目录。",5)
+
+func apply_window_size():
+	configure_window()
+	if preferences.window_width==0:return
+	var usable=DisplayServer.screen_get_usable_rect()
+	if usable.size.x<1:return
+	var width=minf(preferences.window_width,minf(usable.size.x-48,(usable.size.y-48)*16.0/9.0))
+	width=maxf(960,floorf(width/16)*16)
+	var desired=Vector2i(int(width),int(width*9/16))
+	get_window().size=desired
+	DisplayServer.window_set_position(usable.position+(usable.size-desired)/2)
+
+func apply_frame_limit():
+	Engine.max_fps=15 if preferences.background_saving and not window_focused else preferences.fps
 
 func flat(color: Color, radius: int = 10) -> StyleBoxFlat:
 	var s=StyleBoxFlat.new()
@@ -131,6 +168,7 @@ func button(text_: String, callback: Callable, primary: bool=false) -> Button:
 		b.add_theme_color_override("font_color",Color("fffaf0"))
 		b.add_theme_color_override("font_hover_color",Color("fffaf0"))
 		b.add_theme_color_override("font_pressed_color",Color("fffaf0"))
+		b.add_theme_color_override("font_hover_pressed_color",Color("fffaf0"))
 		b.add_theme_color_override("font_focus_color",Color("fffaf0"))
 	return b
 
@@ -175,7 +213,7 @@ func build_ui():
 	focus.set_border_width_all(2)
 	focus.border_color=Color("8d9f81")
 	theme.set_stylebox("focus","Button",focus)
-	for key in ["font_color","font_hover_color","font_pressed_color","font_focus_color"]:theme.set_color(key,"Button",Color("40514b"))
+	for key in ["font_color","font_hover_color","font_pressed_color","font_hover_pressed_color","font_focus_color"]:theme.set_color(key,"Button",Color("40514b"))
 	theme.set_color("font_disabled_color","Button",Color("9b9a90"))
 	var panel_style=flat(Color("faf6ec"),16)
 	panel_style.content_margin_left=26
@@ -223,7 +261,7 @@ func build_ui():
 	hud.add_child(interaction)
 	anchored(interaction,0,0,1,1,Vector4(0,82,0,-78))
 	interaction.gui_input.connect(stage_input)
-	info=button("小企鹅  ▾",func():open_panel("profile"))
+	info=button("小嘎嘎",func():open_panel("profile"))
 	info.clip_text=true
 	info.alignment=HORIZONTAL_ALIGNMENT_LEFT
 	info.tooltip_text="资料 · 成就 · 装扮"
@@ -234,7 +272,13 @@ func build_ui():
 	hud.add_child(growth)
 	anchored(growth,0,0,0,0,Vector4(252,21,410,62))
 	level_label=label("Lv.1",15)
-	growth.add_child(level_label)
+	var growth_row=HBoxContainer.new()
+	growth.add_child(growth_row)
+	level_label.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	growth_row.add_child(level_label)
+	xp_label=label("0 / 120",12,Color("7c8976"))
+	xp_label.horizontal_alignment=HORIZONTAL_ALIGNMENT_RIGHT
+	growth_row.add_child(xp_label)
 	xp_bar=progress_bar("b7a17c")
 	growth.add_child(xp_bar)
 	var statuses=HBoxContainer.new()
@@ -322,20 +366,20 @@ func build_ui():
 	var intro=VBoxContainer.new()
 	intro.add_theme_constant_override("separation",12)
 	adopt_box.add_child(intro)
-	intro.add_child(label("给它起个名字",20))
+	intro.add_child(label("来起个名字吧~",20))
 	var name_row=HBoxContainer.new()
 	intro.add_child(name_row)
 	nickname=LineEdit.new()
-	nickname.text="小企鹅"
+	nickname.text="小嘎嘎"
 	nickname.max_length=12
 	nickname.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	name_row.add_child(nickname)
-	var adopt=button("领养",func():
+	var adopt=button("开始领养！",func():
 		if game.load_error:return
 		game.adopt(nickname.text,now())
 		adopt_box.hide()
 		pet.perform("wing_r",2)
-		show_message("欢迎回家！",3)
+		show_message(game.data.name+"有家啦！",3)
 	,true)
 	adopt.disabled=game.load_error
 	name_row.add_child(adopt)
@@ -410,6 +454,14 @@ func build_modal():
 		b.toggle_mode=true
 		tabs.add_child(b)
 		tab_buttons[entry[1]]=b
+	settings_tabs=HBoxContainer.new()
+	right.add_child(settings_tabs)
+	for entry in [["常规","general"],["关于","about"]]:
+		var b=button(entry[0],func():set_settings_tab(entry[1]))
+		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		b.toggle_mode=true
+		settings_tabs.add_child(b)
+		settings_buttons[entry[1]]=b
 	var scroll_area=Control.new()
 	scroll_area.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	right.add_child(scroll_area)
@@ -486,6 +538,7 @@ func build_preview():
 	preview_pet=new_pet()
 	preview_viewport.add_child(preview_pet)
 	preview_pet.idle_left=1000000
+	preview_pet.autonomous_idle=false
 	preview_pet.process_mode=Node.PROCESS_MODE_DISABLED
 	preview_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
 	var drag=Control.new()
@@ -554,8 +607,9 @@ func refresh():
 	for key in status_bars:
 		status_bars[key].value=d[key]
 		status_labels[key].text="%s  %d" % [{"food":"饱食","clean":"清洁","mood":"心情"}[key],int(round(d[key]))]
-	info.text=d.name+"  ▾"
+	info.text=d.name
 	level_label.text="Lv.%d" % d.level
+	xp_label.text="已满级" if d.level==20 else "%d / %d" % [d.xp,C.next_xp(d.level)]
 	xp_bar.value=100 if d.level==20 else d.xp/C.next_xp(d.level)*100
 	xp_bar.tooltip_text="已满级" if d.level==20 else "经验 %d / %d" % [d.xp,C.next_xp(d.level)]
 	coins.text="金币  %d" % int(floor(d.coins+0.000001))
@@ -573,6 +627,10 @@ func refresh():
 		pet.update_task(d.task.get("kind",""),d.task.get("id",""))
 		pet.low_mood=d.mood<25 or d.food<20 or d.clean<20
 		pet.update_accessories(d.head,d.neck,d.gold and d.level>=20)
+		pet.unlocked_idle_actions.clear()
+		if d.adopted:
+			for entry in C.ACTIONS:
+				if d.level>=entry[2]:pet.unlocked_idle_actions.append(entry[0])
 	if is_instance_valid(preview_pet):preview_pet.update_accessories(d.head,d.neck,d.gold and d.level>=20)
 	if game.save_error and not reported_save_error:show_message("保存失败，请检查存档目录。",15)
 	reported_save_error=game.save_error
@@ -627,7 +685,7 @@ func toggle_menu(mode: String):
 			if error.is_empty():
 				if item.clean>0: pet.perform("wash",2.4)
 				else: pet.feed_item(item.id)
-				show_message("香香的。" if item.clean>0 else "啊呜！",2)
+				show_message("洗刷刷洗刷刷♪" if item.clean>0 else "好次好次~",2)
 			refresh()
 		)
 		b.custom_minimum_size.y=64
@@ -662,6 +720,8 @@ func open_panel(mode: String):
 	var profile=panel_mode=="profile"
 	preview_pane.visible=profile
 	tabs.visible=profile
+	settings_tabs.visible=panel_mode=="settings"
+	reset_preview_action()
 	if is_instance_valid(preview_pet):
 		preview_pet.process_mode=Node.PROCESS_MODE_INHERIT if profile else Node.PROCESS_MODE_DISABLED
 		preview_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS if profile else SubViewport.UPDATE_DISABLED
@@ -695,12 +755,14 @@ func close_panel():
 	panel_mode=""
 	preview_dragging=false
 	if is_instance_valid(preview_pet):
+		reset_preview_action()
 		preview_pet.process_mode=Node.PROCESS_MODE_DISABLED
 		preview_viewport.render_target_update_mode=SubViewport.UPDATE_DISABLED
 	set_hud_focus(true)
 	if is_instance_valid(previous_focus) and previous_focus.is_visible_in_tree():previous_focus.grab_focus()
 
 func set_profile_tab(tab: String):
+	reset_preview_action()
 	var scroll_position=panel_scroll.scroll_vertical if profile_tab==tab else 0
 	clear_body()
 	profile_tab=tab
@@ -710,6 +772,20 @@ func set_profile_tab(tab: String):
 		"achieve":achievement_panel()
 		"dress":dress_panel()
 	panel_scroll.set_deferred("scroll_vertical",scroll_position)
+
+func reset_preview_action():
+	if not is_instance_valid(preview_pet):return
+	preview_dragging=false
+	preview_pet.perform("",1.0)
+	preview_pet.action_left=0.0
+	preview_pet.target=Vector3.ZERO
+	preview_pet.position=Vector3.ZERO
+	# Apply the neutral pose now, before a closed preview is suspended.
+	preview_pet._process(0.0)
+
+func preview_action(id: String, level: int):
+	if panel_mode!="profile" or profile_tab!="profile" or game.data.level<level:return
+	preview_pet.perform(id,2.8)
 
 func item_effects(item: Dictionary) -> String:
 	var restores: Array[String]=[]
@@ -794,8 +870,8 @@ func profile_panel():
 	row_text("学习 %.1f 小时   打工 %.1f 小时" % [game.data.stats.study/3600,game.data.stats.work/3600],13,Color("8a8b78"))
 	divider()
 	row_text("动作",15)
-	for entry in [["spin","转圈",2],["dance","跳舞",5],["celebrate","庆祝",10]]:
-		var b=button(entry[1]+(" · Lv.%d" % entry[2] if game.data.level<entry[2] else ""),func():close_panel();pet.perform(entry[0],2.8))
+	for entry in C.ACTIONS:
+		var b=button(entry[1]+(" · Lv.%d" % entry[2] if game.data.level<entry[2] else ""),func():preview_action(entry[0],entry[2]))
 		b.disabled=game.data.level<entry[2]
 		panel_body.add_child(b)
 
@@ -817,14 +893,112 @@ func dress_panel():
 	if game.data.gold: row_text("再次点击脱下，或选择头饰、颈饰切换。",13,Color("8a8b78"))
 
 func settings_panel():
-	row_text("显示",16)
-	panel_body.add_child(button("恢复默认窗口",func():configure_window()))
+	set_settings_tab(settings_tab)
+
+func set_settings_tab(tab: String):
+	clear_body()
+	settings_tab=tab
+	panel_scroll.scroll_vertical=0
+	panel_error.text=""
+	for key in settings_buttons:settings_buttons[key].set_pressed_no_signal(key==tab)
+	if tab=="general":general_panel()
+	else:about_panel()
+
+func setting_row(title: String) -> HBoxContainer:
+	var row=HBoxContainer.new()
+	row.add_theme_constant_override("separation",16)
+	panel_body.add_child(row)
+	var text_=label(title,16)
+	text_.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	row.add_child(text_)
+	return row
+
+func general_panel():
+	var row=setting_row("窗口大小")
+	var sizes=OptionButton.new()
+	sizes.name="WindowSize"
+	sizes.custom_minimum_size=Vector2(225,42)
+	sizes.add_item("默认窗口",0)
+	var usable=DisplayServer.screen_get_usable_rect().size
+	for width in [1280,1600,1920]:
+		if width<=usable.x-48 and width*9/16<=usable.y-48:sizes.add_item("%d × %d" % [width,width*9/16],width)
+	for i in sizes.item_count:
+		if sizes.get_item_id(i)==preferences.window_width:sizes.select(i)
+	sizes.item_selected.connect(func(index):
+		preferences.window_width=sizes.get_item_id(index)
+		apply_window_size()
+		save_preferences()
+	)
+	row.add_child(sizes)
+	row.add_child(button("恢复默认窗口",func():
+		preferences.window_width=0
+		apply_window_size()
+		save_preferences()
+		set_settings_tab("general")
+	))
+	row=setting_row("帧率上限")
+	var fps=OptionButton.new()
+	fps.name="FrameLimit"
+	fps.custom_minimum_size=Vector2(225,42)
+	fps.add_item("30 FPS",30)
+	fps.add_item("60 FPS",60)
+	fps.select(0 if preferences.fps==30 else 1)
+	fps.item_selected.connect(func(index):
+		preferences.fps=fps.get_item_id(index)
+		apply_frame_limit()
+		save_preferences()
+	)
+	row.add_child(fps)
+	row=setting_row("后台省电")
+	var saving=CheckButton.new()
+	saving.name="BackgroundSaving"
+	saving.custom_minimum_size=Vector2(225,42)
+	saving.text="开启" if preferences.background_saving else "关闭"
+	saving.set_pressed_no_signal(preferences.background_saving)
+	saving.toggled.connect(func(enabled):
+		saving.text="开启" if enabled else "关闭"
+		preferences.background_saving=enabled
+		apply_frame_limit()
+		save_preferences()
+	)
+	row.add_child(saving)
+	row_text("切到后台时降低帧率，任务照常进行。",13,Color("8a8b78"))
 	divider()
-	row_text("操作",16)
-	row_text("点击头、肚子、翅膀或脚。\n按住头部轻轻移动来抚摸。\n拖动地面旋转，停下 10 秒后回正。\nEsc 关闭菜单或弹窗。",14)
-	divider()
+	panel_body.add_child(button("打开存档文件夹",func():OS.shell_open(ProjectSettings.globalize_path(game.path).get_base_dir())))
 	row_text("自动保存 · 退出后任务继续",13,Color("8a8b78"))
-	row_text("存档："+ProjectSettings.globalize_path(game.path),12,Color("8a8b78"))
+
+func source_link(title: String, url: String):
+	var link=LinkButton.new()
+	link.text=title
+	link.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND
+	link.add_theme_color_override("font_color",Color("607d69"))
+	link.add_theme_color_override("font_hover_color",Color("40514b"))
+	link.add_theme_color_override("font_pressed_color",Color("40514b"))
+	link.add_theme_font_size_override("font_size",14)
+	link.tooltip_text=url
+	link.pressed.connect(func():OS.shell_open(url))
+	panel_body.add_child(link)
+
+func about_panel():
+	row_text("养一只咕咕嘎嘎吧！",21)
+	row_text("版本 "+str(ProjectSettings.get_setting("application/config/version")),13,Color("8a8b78"))
+	row_text("陪小嘎嘎吃饭、洗澡、学习和打工，慢慢长大。",14)
+	divider()
+	row_text("游玩方法",16)
+	row_text("点击头、肚子、翅膀或脚，按住头部轻轻移动来抚摸。\n拖动地面旋转，停下 10 秒后回正。\n点击名字查看资料、成就和装扮，动作可在左侧预览。\n喂食、洗澡可连续使用物品，点外面收起。\n学习和打工同时只能进行一项，退出后任务继续。\nEsc 关闭菜单或弹窗，游戏自动保存。",14)
+	divider()
+	row_text("玩法与素材",16)
+	row_text("养成玩法参考 QQ 宠物。",14)
+	source_link("企鹅高松灯 · -爱啃梨（组合模型下载）","https://www.bilibili.com/video/BV15WD9BPEPR/")
+	source_link("高松灯头部 · BanG Dream! / Bushiroad Games","https://www.deviantart.com/bunglescrungle/art/BanG-Dream-MyGO-FBX-and-PMX-DL-1036304336")
+	row_text("以下 CC BY 4.0 仅适用于企鹅身体。",12,Color("8a8b78"))
+	source_link("企鹅身体 · Private (Madagascar) / Guilherme Navarro","https://sketchfab.com/3d-models/private-madagascar-a288037027374e089d4744b3ad25ad24")
+	source_link("身体素材许可 · CC BY 4.0","https://creativecommons.org/licenses/by/4.0/")
+	row_text("本项目调整了模型导出、贴图、表情与翼根，增加程序动作。\n配饰、动作道具、背景和图标由本项目制作。",13)
+	source_link("备用企鹅 · Penguin (Rig-CntRig-Anim) / nicoma · CC BY 4.0","https://sketchfab.com/3d-models/penguin-rig-cntrig-anim-db8a037d135b41b08752ce4c57f43525")
+	source_link("Godot Engine · MIT License","https://godotengine.org/license/")
+	divider()
+	source_link("项目仓库 · TTZW1001 / GuguGaga","https://github.com/TTZW1001/GuguGaga")
 
 func request_end():
 	game.advance(now())
@@ -877,10 +1051,10 @@ func stage_input(event: InputEvent):
 				game.interact(false,now(),Time.get_datetime_dict_from_system().hour)
 				if game.clicks.size()>=6:
 					pet.perform("angry",1.8)
-					show_message("慢一点嘛。",2)
+					show_message("慢一点啦！",2)
 				else:
 					pet.perform(pressed_part,1.8)
-					show_message({"head":"嗯？","belly":"痒痒！","wing_l":"嗨～","wing_r":"嗨～","feet":"蹦！"}.get(pressed_part,""),2)
+					show_message({"head":"嗯？","belly":"痒痒！","wing_l":"抬抬左手~","wing_r":"抬抬右手~","feet":"跳跳！"}.get(pressed_part,""),2)
 	if event is InputEventMouseMotion:
 		if rotating:
 			pet.view_yaw=wrapf(pet.view_yaw+event.relative.x*0.012,-PI,PI)
@@ -891,7 +1065,7 @@ func stage_input(event: InputEvent):
 				stroked=true
 				var rewarded=game.interact(true,now(),Time.get_datetime_dict_from_system().hour)
 				pet.perform("pet",2.2)
-				show_message(("♥ " if "pet" in game.data.achievements else "")+"舒服。"+(" 心情 +2" if rewarded else ""),3)
+				show_message(("啦啦啦啦♪" if rewarded else "好舒服~") if "pet" in game.data.achievements else ("嗯哼哼♪" if rewarded else "舒服~"),3)
 		else:hint.text="拖动地面旋转" if is_ground(stage_point(event.position)) and hit_part(stage_point(event.position)).is_empty() else ""
 
 func _input(event: InputEvent):
@@ -942,8 +1116,13 @@ func _notification(what: int):
 			show_message("保存失败，暂未退出。",15)
 			return
 		get_tree().quit()
-	if what==NOTIFICATION_APPLICATION_FOCUS_IN and not game.data.is_empty():game.advance(now())
+	if what==NOTIFICATION_APPLICATION_FOCUS_IN:
+		window_focused=true
+		apply_frame_limit()
+		if not game.data.is_empty():game.advance(now())
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT:
+		window_focused=false
+		apply_frame_limit()
 		pressing=false
 		rotating=false
 		preview_dragging=false

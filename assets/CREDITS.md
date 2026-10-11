@@ -1,7 +1,13 @@
 # 素材署名
 
 当前主角来自用户提供的 `assets/incoming/企鹅高松灯.blend`，由高松灯头部与企鹅身体组成。
-头部贴图、网格及表情形态随该文件内嵌提供；独立头部作者和许可说明未随文件附带，来源待提供者补充，不能将以下企鹅身体的 CC BY 许可套用到头部。
+用户提供的组合模型下载来源：**-爱啃梨**《企鹅高松灯 3D模型 下载》，https://www.bilibili.com/video/BV15WD9BPEPR/ 。
+视频简介说明发布者将两个现有模型组合，并列出以下身体与头部来源。
+
+养成玩法参考 QQ 宠物；游戏程序、配饰与场景由本项目制作。
+头部贴图、网格及表情形态随该文件内嵌提供，来自 **BanG Dream! Girls Band Party**，由 **BungleScrungle** 提取整理：
+https://www.deviantart.com/bunglescrungle/art/BanG-Dream-MyGO-FBX-and-PMX-DL-1036304336 。
+原下载页要求署名 **Bushiroad Games**，并说明上传者是模型提取者、并非建模作者。头部未核实取得权利方的公开分发许可，不能将以下企鹅身体的 CC BY 许可套用到头部。
 本地个人体验版本保留该组合模型；未宣称取得其头部素材的公开分发许可。
 
 企鹅身体：This work is based on **"Private (Madagascar)"**
