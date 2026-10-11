@@ -17,11 +17,16 @@ window/size/window_width_override=1920
 window/size/window_height_override=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="keep"
+window/size/viewport_width.android=432
+window/size/viewport_height.android=864
+window/stretch/aspect.android="expand"
+window/handheld/orientation.android=1
 
 [rendering]
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 textures/default_filters/use_nearest_mipmap_filter=false
+textures/vram_compression/import_etc2_astc=true
 environment/defaults/default_clear_color=Color(0.94, 0.91, 0.84, 1)
 
 [audio]

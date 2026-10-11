@@ -2,6 +2,15 @@ extends Node
 const State = preload("res://scripts/state.gd")
 const C = preload("res://scripts/catalog.gd")
 const Penguin = preload("res://scripts/penguin.gd")
+const Platform = preload("res://scripts/platform.gd")
+const PortraitLayout = preload("res://scripts/portrait_layout.gd")
+var portrait = Platform.portrait()
+var room: TextureRect
+var interaction: Control
+var growth: VBoxContainer
+var statuses: HBoxContainer
+var toolbar: BoxContainer
+var settings_button: Button
 var game = State.new()
 var ui: Control
 var hud: Control
@@ -80,6 +89,7 @@ func _ready():
 	apply_window_size()
 	apply_frame_limit()
 	get_tree().auto_accept_quit = false
+	if OS.has_feature("android"):get_tree().quit_on_go_back=false
 	game.message.connect(show_message)
 	game.changed.connect(refresh)
 	if "--smoke" in OS.get_cmdline_user_args(): game.path="user://smoke-penguin.json"
@@ -87,6 +97,10 @@ func _ready():
 	build_ui()
 	build_world()
 	build_preview()
+	if portrait:
+		PortraitLayout.apply(self)
+		get_viewport().size_changed.connect(func():PortraitLayout.apply(self))
+		PortraitLayout.apply.call_deferred(self)
 	refresh()
 	if not pending_messages.is_empty():
 		show_message(" / ".join(pending_messages),8)
@@ -98,6 +112,9 @@ func _ready():
 	print("QPET_READY")
 
 func configure_window():
+	if portrait:
+		Platform.configure_window(get_window())
+		return
 	DisplayServer.window_set_min_size(Vector2i(960,540))
 	var usable=DisplayServer.screen_get_usable_rect()
 	if usable.size.x<1: return
@@ -125,6 +142,7 @@ func save_preferences():
 
 func apply_window_size():
 	configure_window()
+	if portrait:return
 	if preferences.window_width==0:return
 	var usable=DisplayServer.screen_get_usable_rect()
 	if usable.size.x<1:return
@@ -150,7 +168,7 @@ func flat(color: Color, radius: int = 10) -> StyleBoxFlat:
 func label(text_: String, size_: int=16, color: Color=Color("40514b")) -> Label:
 	var l=Label.new()
 	l.text=text_
-	l.add_theme_font_size_override("font_size",size_)
+	l.add_theme_font_size_override("font_size",maxi(16,size_) if portrait else size_)
 	l.add_theme_color_override("font_color",color)
 	l.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	return l
@@ -158,7 +176,7 @@ func label(text_: String, size_: int=16, color: Color=Color("40514b")) -> Label:
 func button(text_: String, callback: Callable, primary: bool=false) -> Button:
 	var b=Button.new()
 	b.text=text_
-	b.custom_minimum_size.y=42
+	b.custom_minimum_size.y=52 if portrait else 42
 	b.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND
 	b.pressed.connect(callback)
 	if primary:
@@ -204,7 +222,7 @@ func build_ui():
 	var font=SystemFont.new()
 	font.font_names=PackedStringArray(["Microsoft YaHei UI","Microsoft YaHei","Noto Sans CJK SC"])
 	theme.default_font=font
-	theme.default_font_size=16
+	theme.default_font_size=18 if portrait else 16
 	theme.set_stylebox("normal","Button",flat(Color("eee6d8")))
 	theme.set_stylebox("hover","Button",flat(Color("dce4d6")))
 	theme.set_stylebox("pressed","Button",flat(Color("c8d8c5")))
@@ -238,10 +256,10 @@ func build_ui():
 	ui.add_child(hud)
 	hud.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	hud.mouse_filter=Control.MOUSE_FILTER_IGNORE
-	var room=TextureRect.new()
+	room=TextureRect.new()
 	hud.add_child(room)
 	anchored(room,0,0,1,1,Vector4(0,82,0,-78))
-	room.texture=load("res://assets/room.svg")
+	room.texture=load("res://assets/room_portrait.svg" if portrait else "res://assets/room.svg")
 	room.expand_mode=TextureRect.EXPAND_IGNORE_SIZE
 	room.stretch_mode=TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	room.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -257,7 +275,7 @@ func build_ui():
 	viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS
 	viewport.msaa_3d=Viewport.MSAA_2X
 	stage.add_child(viewport)
-	var interaction=Control.new()
+	interaction=Control.new()
 	hud.add_child(interaction)
 	anchored(interaction,0,0,1,1,Vector4(0,82,0,-78))
 	interaction.gui_input.connect(stage_input)
@@ -268,7 +286,7 @@ func build_ui():
 	info.add_theme_stylebox_override("normal",flat(Color(0,0,0,0)))
 	hud.add_child(info)
 	anchored(info,0,0,0,0,Vector4(18,21,228,63))
-	var growth=VBoxContainer.new()
+	growth=VBoxContainer.new()
 	hud.add_child(growth)
 	anchored(growth,0,0,0,0,Vector4(252,21,410,62))
 	level_label=label("Lv.1",15)
@@ -281,7 +299,7 @@ func build_ui():
 	growth_row.add_child(xp_label)
 	xp_bar=progress_bar("b7a17c")
 	growth.add_child(xp_bar)
-	var statuses=HBoxContainer.new()
+	statuses=HBoxContainer.new()
 	hud.add_child(statuses)
 	anchored(statuses,0,0,1,0,Vector4(452,21,-208,62))
 	statuses.add_theme_constant_override("separation",24)
@@ -303,7 +321,8 @@ func build_ui():
 	attributes.add_theme_constant_override("line_spacing",16)
 	hud.add_child(attributes)
 	anchored(attributes,0,0,0,0,Vector4(34,120,210,244))
-	var toolbar=VBoxContainer.new()
+	toolbar=BoxContainer.new()
+	toolbar.vertical=true
 	hud.add_child(toolbar)
 	anchored(toolbar,1,0.5,1,0.5,Vector4(-112,-120,-28,138))
 	toolbar.add_theme_constant_override("separation",12)
@@ -325,6 +344,7 @@ func build_ui():
 		icon.position=Vector2(28,9)
 		icon.size=Vector2(28,28)
 	var settings=button("设置",func():open_panel("settings"))
+	settings_button=settings
 	hud.add_child(settings)
 	anchored(settings,0,1,0,1,Vector4(28,-65,112,-23))
 	idle_actions=HBoxContainer.new()
@@ -434,16 +454,18 @@ func build_modal():
 	close.custom_minimum_size=Vector2(42,42)
 	close.add_theme_font_size_override("font_size",24)
 	header.add_child(close)
-	var body_row=HBoxContainer.new()
-	body_row.add_theme_constant_override("separation",28)
+	var body_row=BoxContainer.new()
+	body_row.vertical=portrait
+	body_row.add_theme_constant_override("separation",12 if portrait else 28)
 	body_row.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	column.add_child(body_row)
 	preview_pane=Control.new()
-	preview_pane.custom_minimum_size.x=330
+	preview_pane.custom_minimum_size.x=0 if portrait else 330
 	preview_pane.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	body_row.add_child(preview_pane)
 	var right=VBoxContainer.new()
 	right.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	right.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	right.add_theme_constant_override("separation",16)
 	body_row.add_child(right)
 	tabs=HBoxContainer.new()
@@ -730,6 +752,7 @@ func open_panel(mode: String):
 	panel_title.text={"profile":"我的企鹅","study":"学习","work":"打工","shop":"商店","settings":"设置","end":"提前结束"}.get(panel_mode,"")
 	modal.show()
 	anchored(toast,0.15,0,0.85,0,Vector4(0,74,0,96))
+	if portrait:PortraitLayout.apply_panel(self)
 	set_hud_focus(false)
 	clear_body()
 	panel_scroll.scroll_vertical=0
@@ -752,6 +775,7 @@ func close_panel():
 	if not is_instance_valid(modal):return
 	modal.hide()
 	if is_instance_valid(toast):anchored(toast,0.15,1,0.85,1,Vector4(0,-128,0,-104))
+	if portrait and is_instance_valid(toast):PortraitLayout.apply(self)
 	panel_mode=""
 	preview_dragging=false
 	if is_instance_valid(preview_pet):
@@ -1109,6 +1133,10 @@ func _process(delta: float):
 		if toast_time<=0 and is_instance_valid(toast):toast.text=""
 
 func _notification(what: int):
+	if what==NOTIFICATION_WM_GO_BACK_REQUEST:
+		if is_instance_valid(modal) and modal.visible:close_panel()
+		elif is_instance_valid(item_menu) and item_menu.visible:close_menu()
+		else:_notification(NOTIFICATION_WM_CLOSE_REQUEST)
 	if what==NOTIFICATION_WM_CLOSE_REQUEST:
 		save_profile_name()
 		game.advance(now())

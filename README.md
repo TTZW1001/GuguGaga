@@ -2,6 +2,8 @@
 
 一款使用 Godot 4 制作的 Windows 单机 3D 养成小游戏。陪小嘎嘎吃饭、洗澡、学习和打工，解锁动作、成就与装扮。
 
+`android` 分支从 `v1.3.2` 开始维护同一工程的安卓适配，Windows 的正式版本保留在 `master`。当前仅为**主页面与“我的企鹅”的竖屏布局预览**，其他页面、手机生命周期和完整安卓回归尚待完成；APK 使用独立包名与调试签名，不是正式发行版本。
+
 ![游戏画面](docs/screenshots/home.png)
 
 ## 下载与运行
@@ -50,6 +52,17 @@ python tools/package_windows.py --godot "你的 Godot 控制台程序路径.exe"
 | `build/` | 本机生成的发行文件，不进入版本控制 |
 
 状态测试可运行 `godot --headless --path . --script tests/test_state.gd`；界面与模型测试需要图形环境。测试时请把 `APPDATA` 指向 `tests/runtime/` 下的独立目录，避免读取个人游戏存档。Windows 程序测试脚本为 `tools/test_windows_release.py`，额外需要 Pillow 和 psutil。
+
+安卓布局可通过 `godot --path . -- --portrait-preview` 在电脑预览。自动布局检查使用 `--script tests/test_portrait.gd -- --portrait-preview`，并同样隔离 `APPDATA`。实际安卓测试使用独立包名 `com.ttzw1001.gugugaga.preview`，不连接或迁移 Windows 存档。
+
+复用本机 JDK 17、Android SDK（Platform 35 / Build Tools 35.0.1），下载官方调试模板后打包：
+
+```powershell
+python tools/fetch_templates.py --android-debug
+python tools/package_android.py --godot "Godot 控制台程序路径.exe" --sdk "Android SDK 目录" --jdk "JDK 17 目录"
+```
+
+预览 APK 输出到 `build/android/GuguGaga-1.3.2-portrait-preview.apk`，包含 ARM64 与 x86_64。打包工具将本机设置、临时调试密钥和随机密码留在忽略的 `tests/runtime/android-export/`；可通过 `--debug-keystore` 指定已有调试密钥，并用环境变量 `GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD` 提供密码。正式签名另行配置，勿提交密钥、密码或导出凭据。Windows 打包方式不变；适配期间的 Windows 回归导出请明确指定 `build/windows-regression/` 内的新文件，保留原 1.3.2 成品。
 
 ## 素材与署名
 

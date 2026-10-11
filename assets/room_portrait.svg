@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="432" height="600" viewBox="0 0 432 600">
+<defs><linearGradient id="wall" x2="0" y2="1"><stop stop-color="#f6f0e5"/><stop offset="1" stop-color="#ece1cf"/></linearGradient><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#c6dad7"/><stop offset="1" stop-color="#e4e9d7"/></linearGradient><pattern id="paper" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M20 14v4m-2-2h4" stroke="#d7cbb5" stroke-opacity=".3"/></pattern></defs>
+<rect width="432" height="600" fill="url(#wall)"/><rect width="432" height="600" fill="url(#paper)"/>
+<path d="M0 420h432" stroke="#d2bea1" stroke-width="10"/><path d="M0 427h432" stroke="#e6d5bd" stroke-width="7"/>
+<rect x="26" y="62" width="126" height="170" rx="60" fill="#d9c5a6"/><rect x="33" y="69" width="112" height="157" rx="54" fill="url(#sky)"/>
+<circle cx="114" cy="113" r="17" fill="#f9edc3"/><path d="M33 202q30-38 60-15t52-5v44H33" fill="#b6c8b1"/><path d="M89 69v157M33 160h112" stroke="#f5ebd8" stroke-width="5"/>
+<rect x="18" y="227" width="142" height="9" rx="4" fill="#c9ad87"/>
+<path d="M16 62q-12 86 1 153l22-5q-10-68 11-146M162 62q12 86-1 153l-22-5q10-68-11-146" fill="#d9ab96" opacity=".72"/>
+<path d="M174 27q100 22 204 0" fill="none" stroke="#cfbfa5" stroke-width="2"/><g fill="#d9bd7f"><circle cx="196" cy="31" r="4"/><circle cx="235" cy="36" r="4"/><circle cx="276" cy="38" r="4"/><circle cx="317" cy="36" r="4"/><circle cx="356" cy="31" r="4"/></g>
+<rect x="322" y="89" width="64" height="77" rx="3" fill="#cbb696" transform="rotate(4 354 127)"/><rect x="328" y="95" width="52" height="65" fill="#faf4e6"/><path d="M338 139q7-28 14-2 8-44 16-7" fill="none" stroke="#9eaf94" stroke-width="4" stroke-linecap="round"/>
+<path d="M351 418l-7-52h48l-8 52Z" fill="#bb8d70"/><path d="M368 369v-73" stroke="#829876" stroke-width="4"/><ellipse cx="358" cy="315" rx="8" ry="19" fill="#9eae8c" transform="rotate(-35 358 315)"/><ellipse cx="380" cy="334" rx="8" ry="20" fill="#8fa382" transform="rotate(38 380 334)"/>
+</svg>
