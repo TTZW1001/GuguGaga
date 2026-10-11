@@ -1,6 +1,6 @@
 # 养一只咕咕嘎嘎吧！
 
-双击 `build/养一只咕咕嘎嘎吧！-1.2.0.exe` 即可运行。Windows 64 位单机游戏，无需安装、联网，全程静音。
+双击 `build/养一只咕咕嘎嘎吧！-1.3.0.exe` 即可运行。Windows 64 位单机游戏，无需安装、联网，全程静音。
 
 窗口默认 16:9，按屏幕大小调整；最低 960×540。使用 Compatibility / OpenGL 3.3 渲染。
 
@@ -16,6 +16,6 @@
 
 开发：用 Godot 4.6.2 打开 `project.godot`。导出模板位于 `tools/templates`，缺失时运行 `python tools/fetch_templates.py`。
 
-已确认的最新动作优化请通过 Godot 运行当前工程；现有 `1.2.0` EXE 和发行 ZIP 为动作优化前版本。动作由 `scripts/tomori_penguin.gd` 中的程序骨骼动画控制，新增道具位于 `assets/food`、`assets/sports`、`assets/study` 和 `assets/work`。
+1.3.0 包含已确认的互动、喂食、课程和职业动作优化。课程「舞台表演」更名为「作词课」；职业现为发传单、搬运工、图书校对员、远程客服、保安、程序员和导游。原有任务进度、解锁和收益保留。
 
 主角为用户提供的「企鹅高松灯.blend」，企鹅身体作者 Guilherme Navarro（CC BY 4.0）；备用模型作者 nicoma（CC BY 4.0）。来源、改动及引擎许可见 `assets/CREDITS.md` 和发行包 `素材署名.md`。

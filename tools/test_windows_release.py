@@ -6,7 +6,7 @@ from PIL import ImageGrab
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
-parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/养一只咕咕嘎嘎吧！-1.2.0.exe')
+parser.add_argument('--exe', type=pathlib.Path, default=ROOT / 'build/养一只咕咕嘎嘎吧！-1.3.0.exe')
 EXE = parser.parse_args().exe.resolve()
 RUNTIME = ROOT / ('tests/runtime/release-' + str(time.time_ns()))
 OUTPUT = ROOT / 'tests/output'
@@ -233,8 +233,38 @@ try:
     expect(save_data()['gold'], 'native suit remains equipped after restart')
     close(proc, hwnd)
     proc = None
+    # Every course/job must load its action props from the exported EXE. Keep
+    # existing task IDs to exercise upgrades of saves made before the renames.
+    tasks = [('study', task, duration) for task, duration in [
+        ('sport',900), ('read',900), ('manners',900), ('martial',1800),
+        ('math',1800), ('music',1800), ('combat',3600), ('science',3600), ('stage',3600)
+    ]] + [('work', task, duration) for task, duration in [
+        ('flyer',900), ('carry',1800), ('library',1800), ('waiter',1800),
+        ('guard',3600), ('code',3600), ('idol',3600)
+    ]]
+    for kind, task_id, duration in tasks:
+        timestamp = time.time()
+        fixture.update(head='none', neck='none', gold=True, food=80, clean=80,
+                       inventory={'fish':3,'soap':2}, last=timestamp,
+                       task={'kind':kind,'id':task_id,'elapsed':0,'start':timestamp,
+                             'end':timestamp+duration,'escrow':0})
+        payload = json.dumps(fixture, ensure_ascii=False, separators=(',', ':'))
+        file.write_text(json.dumps({'payload':payload,'sha256':hashlib.sha256(payload.encode('utf-8')).hexdigest()}, ensure_ascii=False), encoding='utf-8')
+        proc, hwnd = start()
+        time.sleep(1.0)
+        expect(save_data()['task'].get('id')==task_id, 'exported action resumes old task ID: '+kind+'/'+task_id)
+        if task_id == 'waiter':
+            click(hwnd, 1210, 370)
+            click(hwnd, 920, 370)
+            expect(wait_until(lambda: save_data()['inventory']['fish']==2), 'exported phone job can use the new food model')
+            click(hwnd, 600, 230)
+            time.sleep(6)
+        close(proc, hwnd)
+        proc = None
+        settled = save_data()
+        expect(settled['task']['elapsed']>1 and settled['gold'], 'exported action preserves task progress and suit: '+task_id)
     errors = '\n'.join(file.read_text(encoding='utf-8', errors='replace') for file in engine_logs)
-    expect('SCRIPT ERROR' not in errors and 'Failed loading resource' not in errors, 'release has no script/resource errors')
+    expect('SCRIPT ERROR' not in errors and 'Failed loading resource' not in errors and 'Failed to load' not in errors, 'release has no script/resource errors')
     print(f'RELEASE_TESTS {checks} checks, 0 failures', flush=True)
 finally:
     if proc is not None and proc.poll() is None:
@@ -245,3 +275,4 @@ finally:
                 proc.wait(timeout=10)
             except subprocess.TimeoutExpired:
                 proc.terminate()
+                proc.wait(timeout=10)

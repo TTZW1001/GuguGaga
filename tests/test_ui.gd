@@ -68,7 +68,7 @@ func run():
 	await wait(0.5)
 	expect(root.size.x*9==root.size.y*16,"initial window is 16:9")
 	expect(ProjectSettings.get_setting("application/config/name")=="养一只咕咕嘎嘎吧！","new game title")
-	expect(ProjectSettings.get_setting("application/config/version")=="1.2.0","release version 1.2.0")
+	expect(ProjectSettings.get_setting("application/config/version")=="1.3.0","release version 1.3.0")
 	expect(ProjectSettings.globalize_path("user://").replace("\\","/").contains("Godot/app_userdata/企鹅小日子/"),"renamed game keeps original save directory")
 	await capture("adoption")
 	await tap(find_button(app.ui,"领养"))
