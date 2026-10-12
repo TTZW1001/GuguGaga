@@ -27,4 +27,6 @@ local.properties
 *.aab
 *.keystore
 *.jks
+*.p12
+*-signing.json
 export_credentials.cfg

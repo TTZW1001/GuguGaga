@@ -1,8 +1,8 @@
 # 养一只咕咕嘎嘎吧！
 
-一款使用 Godot 4 制作的 Windows 单机 3D 养成小游戏。陪小嘎嘎吃饭、洗澡、学习和打工，解锁动作、成就与装扮。
+一款使用 Godot 4 制作的 Windows / Android 单机 3D 养成小游戏。陪小嘎嘎吃饭、洗澡、学习和打工，解锁动作、成就与装扮。两个平台共用同一工程、玩法、存档格式、模型与动作，界面和系统操作按平台适配。
 
-`android` 分支从 `v1.3.2` 开始维护同一工程的安卓适配，Windows 的正式版本保留在 `master`。当前仅为**主页面与“我的企鹅”的竖屏布局预览**，其他页面、手机生命周期和完整安卓回归尚待完成；APK 使用独立包名与调试签名，不是正式发行版本。
+`android` 是从 `v1.3.2` 开始的适配工作分支，Windows 1.3.2 基线保留在 `master`；双平台并不要求长期保留两条开发分支。安卓采用竖屏布局，支持触控、返回关闭弹窗、后台/锁屏保存和任务恢复。已在 Android 12 MuMu 模拟器验证；物理手机的发热、耗电和厂商兼容性仍需真机验证。
 
 ![游戏画面](docs/screenshots/home.png)
 
@@ -57,7 +57,7 @@ python tools/package_windows.py --godot "你的 Godot 控制台程序路径.exe"
 
 `tools/test_android_preview.py --adb "ADB 路径" --serial "设备序列号"` 在已安装并领养过的测试包中使用隔离测试数据，要求 1080×1920 竖屏和 Pillow；会替换该测试包的存档。可用 `--capture-prefix` 区分截图批次。
 
-复用本机 JDK 17、Android SDK（Platform 35 / Build Tools 35.0.1），下载官方调试模板后打包：
+复用本机 JDK 17、Android SDK（Platform 35 / Build Tools 35.0.x），下载官方调试模板后打包：
 
 ```powershell
 python tools/fetch_templates.py --android-debug
@@ -65,6 +65,19 @@ python tools/package_android.py --godot "Godot 控制台程序路径.exe" --sdk 
 ```
 
 使用 `--output build/android/GuguGaga-1.3.2-compact-preview.apk` 可另存紧凑弹窗预览，保留上一版 APK。
+
+正式构建使用官方 release 模板和自行生成、长期保存的专用密钥，不使用临时调试密钥：
+
+```powershell
+python tools/fetch_templates.py --android-release
+python tools/package_android.py --release --godot "Godot 控制台程序路径.exe" --sdk "Android SDK 目录" --jdk "JDK 17 目录" --signing-file "仓库外目录/release-signing.json"
+```
+
+私有签名配置包含 `keystore`（密钥路径，可相对配置文件）、`alias` 和 `password`；密钥与配置一起备份到安全位置，不提交 Git、不随 APK 分发。正式 APK 为 `build/android/GuguGaga-1.3.2-android.apk`，包名 `com.ttzw1001.gugugaga`，关闭调试，支持 Android 7.0+、OpenGL ES 3.0、ARM64 / x86_64。签名不需要购买证书。后续更新保持包名与密钥，增加 `version/code`；覆盖安装保留存档，卸载会删除存档。预览包使用独立包名，正式包不自动迁移预览存档。
+
+后台暂停会保存进度并停止安卓模型与 3D 预览渲染，恢复按真实时间结算，重复恢复不会重复奖励；进程被结束后沿用备份恢复和离线最多 8 小时自然消耗规则。安卓允许系统正常自动锁屏，可在设置选择 30 / 60 FPS。
+
+完整安卓流程检查使用 `tools/test_android_preview.py --full`；最终包名的调试验收构建需要额外指定 `--package com.ttzw1001.gugugaga --reset-test-save`，仅在隔离测试设备执行。`tools/test_android_layout.py --adb "ADB 路径" --serial "设备序列号"` 检查不同竖屏比例与刘海，结束后还原模拟器显示设置。`tests/test_lifecycle.gd` 检查系统暂停/恢复通知，运行时同样隔离 `APPDATA`。正式包覆盖安装后还应检查启动和存档保留。
 
 预览 APK 输出到 `build/android/GuguGaga-1.3.2-portrait-preview.apk`，包含 ARM64 与 x86_64。打包工具将本机设置、临时调试密钥和随机密码留在忽略的 `tests/runtime/android-export/`；可通过 `--debug-keystore` 指定已有调试密钥，并用环境变量 `GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD` 提供密码。正式签名另行配置，勿提交密钥、密码或导出凭据。Windows 打包方式不变；适配期间的 Windows 回归导出请明确指定 `build/windows-regression/` 内的新文件，保留原 1.3.2 成品。
 

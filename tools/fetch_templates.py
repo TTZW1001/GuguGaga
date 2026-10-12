@@ -1,7 +1,9 @@
-"""Fetch Windows templates (default) or Android debug template using HTTP ranges."""
+"""Fetch Windows templates (default) or one Android template using HTTP ranges."""
 import argparse, pathlib, struct, urllib.request, zlib, binascii
 parser = argparse.ArgumentParser(description=__doc__)
-parser.add_argument('--android-debug', action='store_true', help='Download Android debug template instead of Windows templates')
+android = parser.add_mutually_exclusive_group()
+android.add_argument('--android-debug', action='store_true', help='Download Android debug template instead of Windows templates')
+android.add_argument('--android-release', action='store_true', help='Download Android release template instead of Windows templates')
 args = parser.parse_args()
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 url = 'https://github.com/godotengine/godot-builds/releases/download/4.6.2-stable/Godot_v4.6.2-stable_export_templates.tpz'
@@ -23,7 +25,7 @@ for _ in range(count):
     h = struct.unpack_from('<4s6H3L5H2L', central, offset)
     name = central[offset+46:offset+46+h[10]].decode()
     offset += 46+h[10]+h[11]+h[12]
-    wanted = ('android_debug.apk',) if args.android_debug else ('windows_release_x86_64.exe', 'windows_debug_x86_64.exe')
+    wanted = ('android_debug.apk',) if args.android_debug else ('android_release.apk',) if args.android_release else ('windows_release_x86_64.exe', 'windows_debug_x86_64.exe')
     if name.endswith(wanted):
         print('Downloading', name, h[8], flush=True)
         local = fetch(h[16], h[16]+29)

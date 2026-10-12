@@ -21,6 +21,7 @@ window/size/viewport_width.android=432
 window/size/viewport_height.android=864
 window/stretch/aspect.android="expand"
 window/handheld/orientation.android=1
+window/energy_saving/keep_screen_on.android=false
 
 [rendering]
 renderer/rendering_method="gl_compatibility"

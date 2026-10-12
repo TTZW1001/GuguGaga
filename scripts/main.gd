@@ -56,6 +56,7 @@ var settings_tab = "general"
 var settings_path = "user://settings.cfg"
 var preferences = {"window_width":0,"fps":60,"background_saving":true}
 var window_focused = true
+var application_paused = false
 var name_edit: LineEdit
 var preview_pane: Control
 var preview_viewport: SubViewport
@@ -102,6 +103,7 @@ func _ready():
 		get_viewport().size_changed.connect(func():PortraitLayout.apply(self))
 		PortraitLayout.apply.call_deferred(self)
 	refresh()
+	if OS.has_feature("android"):update_mobile_activity()
 	if not pending_messages.is_empty():
 		show_message(" / ".join(pending_messages),8)
 		pending_messages.clear()
@@ -153,7 +155,35 @@ func apply_window_size():
 	DisplayServer.window_set_position(usable.position+(usable.size-desired)/2)
 
 func apply_frame_limit():
-	Engine.max_fps=15 if preferences.background_saving and not window_focused else preferences.fps
+	Engine.max_fps=15 if preferences.background_saving and (not window_focused or application_paused) else preferences.fps
+	if OS.has_feature("android"):update_mobile_activity()
+
+func update_mobile_activity():
+	var active=window_focused and not application_paused
+	if is_instance_valid(pet):pet.process_mode=Node.PROCESS_MODE_INHERIT if active else Node.PROCESS_MODE_DISABLED
+	if is_instance_valid(viewport):viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS if active else SubViewport.UPDATE_DISABLED
+	var preview_active=active and is_instance_valid(modal) and modal.visible and panel_mode=="profile"
+	if is_instance_valid(preview_pet):preview_pet.process_mode=Node.PROCESS_MODE_INHERIT if preview_active else Node.PROCESS_MODE_DISABLED
+	if is_instance_valid(preview_viewport):preview_viewport.render_target_update_mode=SubViewport.UPDATE_ALWAYS if preview_active else SubViewport.UPDATE_DISABLED
+
+func suspend_game():
+	pressing=false
+	rotating=false
+	preview_dragging=false
+	save_profile_name()
+	if not game.data.is_empty():
+		game.advance(now())
+		game.save()
+	save_tick=0
+
+func resume_game():
+	if game.data.is_empty():return
+	# A still-running session keeps the existing real-time decay rules. Only
+	# load_game applies the eight-hour cap after a process restart.
+	game.advance(now())
+	game.save()
+	tick=0
+	save_tick=0
 
 func flat(color: Color, radius: int = 10) -> StyleBoxFlat:
 	var s=StyleBoxFlat.new()
@@ -1151,6 +1181,7 @@ func _input(event: InputEvent):
 				get_viewport().set_input_as_handled()
 
 func _process(delta: float):
+	if OS.has_feature("android") and (application_paused or not window_focused):return
 	if portrait and is_instance_valid(panel_error):
 		panel_error.visible=not panel_error.text.is_empty()
 		menu_error.visible=not menu_error.text.is_empty()
@@ -1189,12 +1220,16 @@ func _notification(what: int):
 	if what==NOTIFICATION_APPLICATION_FOCUS_IN:
 		window_focused=true
 		apply_frame_limit()
-		if not game.data.is_empty():game.advance(now())
+		if not application_paused:resume_game()
 	if what==NOTIFICATION_APPLICATION_FOCUS_OUT:
 		window_focused=false
 		apply_frame_limit()
-		pressing=false
-		rotating=false
-		preview_dragging=false
-		save_profile_name()
-		if not game.data.is_empty():game.advance(now());game.save()
+		suspend_game()
+	if what==NOTIFICATION_APPLICATION_PAUSED:
+		application_paused=true
+		apply_frame_limit()
+		suspend_game()
+	if what==NOTIFICATION_APPLICATION_RESUMED:
+		application_paused=false
+		apply_frame_limit()
+		if window_focused:resume_game()
