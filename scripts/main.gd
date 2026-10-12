@@ -176,7 +176,7 @@ func label(text_: String, size_: int=16, color: Color=Color("40514b")) -> Label:
 func button(text_: String, callback: Callable, primary: bool=false) -> Button:
 	var b=Button.new()
 	b.text=text_
-	b.custom_minimum_size.y=52 if portrait else 42
+	b.custom_minimum_size.y=44 if portrait else 42
 	b.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND
 	b.pressed.connect(callback)
 	if primary:
@@ -234,10 +234,10 @@ func build_ui():
 	for key in ["font_color","font_hover_color","font_pressed_color","font_hover_pressed_color","font_focus_color"]:theme.set_color(key,"Button",Color("40514b"))
 	theme.set_color("font_disabled_color","Button",Color("9b9a90"))
 	var panel_style=flat(Color("faf6ec"),16)
-	panel_style.content_margin_left=26
-	panel_style.content_margin_right=26
-	panel_style.content_margin_top=20
-	panel_style.content_margin_bottom=20
+	panel_style.content_margin_left=16 if portrait else 26
+	panel_style.content_margin_right=16 if portrait else 26
+	panel_style.content_margin_top=12 if portrait else 20
+	panel_style.content_margin_bottom=12 if portrait else 20
 	panel_style.shadow_color=Color(0.1,0.15,0.12,0.14)
 	panel_style.shadow_size=16
 	theme.set_stylebox("panel","PanelContainer",panel_style)
@@ -410,10 +410,18 @@ func build_item_menu():
 	ui.add_child(item_menu)
 	anchored(item_menu,1,0.5,1,0.5,Vector4(-440,-150,-128,190))
 	var col=VBoxContainer.new()
-	col.add_theme_constant_override("separation",12)
+	col.add_theme_constant_override("separation",8 if portrait else 12)
 	item_menu.add_child(col)
 	menu_title=label("喂食",20)
-	col.add_child(menu_title)
+	if portrait:
+		var header=HBoxContainer.new()
+		col.add_child(header)
+		menu_title.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		header.add_child(menu_title)
+		var close=button("×",close_menu)
+		close.custom_minimum_size=Vector2(44,44)
+		header.add_child(close)
+	else:col.add_child(menu_title)
 	menu_body=VBoxContainer.new()
 	menu_body.add_theme_constant_override("separation",8)
 	col.add_child(menu_body)
@@ -437,26 +445,27 @@ func build_modal():
 		if event is InputEventMouseButton and event.button_index==MOUSE_BUTTON_LEFT and event.pressed:close_panel()
 	)
 	panel=PanelContainer.new()
+	if portrait:panel.add_theme_font_size_override("font_size",16)
 	modal.add_child(panel)
 	panel.mouse_filter=Control.MOUSE_FILTER_STOP
 	var column=VBoxContainer.new()
-	column.add_theme_constant_override("separation",16)
+	column.add_theme_constant_override("separation",10 if portrait else 16)
 	panel.add_child(column)
 	var header=HBoxContainer.new()
 	column.add_child(header)
-	panel_title=label("",23)
+	panel_title=label("",20 if portrait else 23)
 	panel_title.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	header.add_child(panel_title)
 	var close=button("×",close_panel)
 	panel_close=close
 	close.name="Close"
 	close.tooltip_text="关闭 · Esc"
-	close.custom_minimum_size=Vector2(42,42)
+	close.custom_minimum_size=Vector2(44,44) if portrait else Vector2(42,42)
 	close.add_theme_font_size_override("font_size",24)
 	header.add_child(close)
 	var body_row=BoxContainer.new()
 	body_row.vertical=portrait
-	body_row.add_theme_constant_override("separation",12 if portrait else 28)
+	body_row.add_theme_constant_override("separation",8 if portrait else 28)
 	body_row.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	column.add_child(body_row)
 	preview_pane=Control.new()
@@ -466,7 +475,7 @@ func build_modal():
 	var right=VBoxContainer.new()
 	right.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	right.size_flags_vertical=Control.SIZE_EXPAND_FILL
-	right.add_theme_constant_override("separation",16)
+	right.add_theme_constant_override("separation",8 if portrait else 16)
 	body_row.add_child(right)
 	tabs=HBoxContainer.new()
 	right.add_child(tabs)
@@ -497,7 +506,7 @@ func build_modal():
 	panel_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	panel_body=VBoxContainer.new()
 	panel_body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	panel_body.add_theme_constant_override("separation",13)
+	panel_body.add_theme_constant_override("separation",8 if portrait else 13)
 	panel_scroll.add_child(panel_body)
 	# A soft edge reveals that content continues, without drawing a scrollbar.
 	var fade=GradientTexture2D.new()
@@ -710,7 +719,7 @@ func toggle_menu(mode: String):
 				show_message("洗刷刷洗刷刷♪" if item.clean>0 else "好次好次~",2)
 			refresh()
 		)
-		b.custom_minimum_size.y=64
+		b.custom_minimum_size.y=60 if portrait else 64
 		menu_body.add_child(b)
 		var copy=VBoxContainer.new()
 		copy.name="Copy"
@@ -725,6 +734,9 @@ func toggle_menu(mode: String):
 	menu_body.add_child(button("去商店",func():open_panel("shop")))
 	item_menu.show()
 	item_menu.size=Vector2(312,item_menu.get_combined_minimum_size().y)
+	if portrait:
+		menu_error.visible=not menu_error.text.is_empty()
+		PortraitLayout.apply_item_menu(self)
 
 func close_menu():
 	if is_instance_valid(item_menu):item_menu.hide()
@@ -761,6 +773,7 @@ func open_panel(mode: String):
 		"shop":shop_panel()
 		"study","work":activity_panel(mode)
 		"settings":settings_panel()
+	if portrait:PortraitLayout.prepare_scroll_body(panel_body)
 	if is_instance_valid(panel_tween):panel_tween.kill()
 	panel.modulate.a=0
 	panel_tween=create_tween()
@@ -795,6 +808,7 @@ func set_profile_tab(tab: String):
 		"profile":profile_panel()
 		"achieve":achievement_panel()
 		"dress":dress_panel()
+	if portrait:PortraitLayout.prepare_scroll_body(panel_body)
 	panel_scroll.set_deferred("scroll_vertical",scroll_position)
 
 func reset_preview_action():
@@ -830,6 +844,7 @@ func shop_panel():
 		var stock=label("库存 %d" % game.data.inventory.get(item.id,0),13,Color("8a8b78"))
 		copy.add_child(stock)
 		stock_labels[item.id]=stock
+		wrap_list_copy(copy)
 		row.add_child(button("%d 金币" % item.price,func():
 			var error=game.buy(item.id,now())
 			panel_error.text=error
@@ -849,6 +864,7 @@ func activity_panel(kind: String):
 		copy.add_child(label("%s  ·  %d 分钟" % [cfg.name,cfg.duration/60],17))
 		copy.add_child(label("%s  ·  经验 +%d" % ["学费 %d / %s +%d" % [cfg.money,C.ATTR_NAMES[cfg.attr],cfg.gain] if kind=="study" else "工资 %d 金币" % cfg.money,cfg.xp],13,Color("7c8976")))
 		copy.add_child(label("饱食 −%d  清洁 −%d%s" % [cfg.food,cfg.clean,"" if cfg.need==0 else "  ·  %s ≥%d" % [C.ATTR_NAMES[cfg.attr],cfg.need]],13,Color("8a8b78")))
+		wrap_list_copy(copy)
 		var start=button("开始",func():
 			var error=game.start_task(kind,cfg.id,now())
 			panel_error.text=error
@@ -860,6 +876,11 @@ func activity_panel(kind: String):
 		start.disabled=not game.data.task.is_empty()
 		h.add_child(start)
 		divider()
+
+func wrap_list_copy(copy: VBoxContainer):
+	if not portrait:return
+	for child in copy.get_children():
+		if child is Label:child.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 
 func achievement_panel():
 	row_text("已达成 %d / 20" % game.data.achievements.size(),15)
@@ -927,6 +948,7 @@ func set_settings_tab(tab: String):
 	for key in settings_buttons:settings_buttons[key].set_pressed_no_signal(key==tab)
 	if tab=="general":general_panel()
 	else:about_panel()
+	if portrait:PortraitLayout.prepare_scroll_body(panel_body)
 
 func setting_row(title: String) -> HBoxContainer:
 	var row=HBoxContainer.new()
@@ -937,7 +959,7 @@ func setting_row(title: String) -> HBoxContainer:
 	row.add_child(text_)
 	return row
 
-func general_panel():
+func window_settings():
 	var row=setting_row("窗口大小")
 	var sizes=OptionButton.new()
 	sizes.name="WindowSize"
@@ -960,10 +982,13 @@ func general_panel():
 		save_preferences()
 		set_settings_tab("general")
 	))
-	row=setting_row("帧率上限")
+
+func general_panel():
+	if not portrait:window_settings()
+	var row=setting_row("帧率上限")
 	var fps=OptionButton.new()
 	fps.name="FrameLimit"
-	fps.custom_minimum_size=Vector2(225,42)
+	fps.custom_minimum_size=Vector2(120,44) if portrait else Vector2(225,42)
 	fps.add_item("30 FPS",30)
 	fps.add_item("60 FPS",60)
 	fps.select(0 if preferences.fps==30 else 1)
@@ -976,7 +1001,7 @@ func general_panel():
 	row=setting_row("后台省电")
 	var saving=CheckButton.new()
 	saving.name="BackgroundSaving"
-	saving.custom_minimum_size=Vector2(225,42)
+	saving.custom_minimum_size=Vector2(120,44) if portrait else Vector2(225,42)
 	saving.text="开启" if preferences.background_saving else "关闭"
 	saving.set_pressed_no_signal(preferences.background_saving)
 	saving.toggled.connect(func(enabled):
@@ -988,10 +1013,21 @@ func general_panel():
 	row.add_child(saving)
 	row_text("切到后台时降低帧率，任务照常进行。",13,Color("8a8b78"))
 	divider()
-	panel_body.add_child(button("打开存档文件夹",func():OS.shell_open(ProjectSettings.globalize_path(game.path).get_base_dir())))
+	if not portrait:panel_body.add_child(button("打开存档文件夹",func():OS.shell_open(ProjectSettings.globalize_path(game.path).get_base_dir())))
 	row_text("自动保存 · 退出后任务继续",13,Color("8a8b78"))
 
 func source_link(title: String, url: String):
+	if portrait:
+		var wrapped=RichTextLabel.new()
+		wrapped.bbcode_enabled=true
+		wrapped.fit_content=true
+		wrapped.scroll_active=false
+		wrapped.text="[url="+url+"]"+title+"[/url]"
+		wrapped.add_theme_font_size_override("normal_font_size",16)
+		wrapped.add_theme_color_override("default_color",Color("607d69"))
+		wrapped.meta_clicked.connect(func(meta):OS.shell_open(str(meta)))
+		panel_body.add_child(wrapped)
+		return
 	var link=LinkButton.new()
 	link.text=title
 	link.mouse_default_cursor_shape=Control.CURSOR_POINTING_HAND
@@ -1009,7 +1045,8 @@ func about_panel():
 	row_text("陪小嘎嘎吃饭、洗澡、学习和打工，慢慢长大。",14)
 	divider()
 	row_text("游玩方法",16)
-	row_text("点击头、肚子、翅膀或脚，按住头部轻轻移动来抚摸。\n拖动地面旋转，停下 10 秒后回正。\n点击名字查看资料、成就和装扮，动作可在左侧预览。\n喂食、洗澡可连续使用物品，点外面收起。\n学习和打工同时只能进行一项，退出后任务继续。\nEsc 关闭菜单或弹窗，游戏自动保存。",14)
+	var guide="点击头、肚子、翅膀或脚，按住头部轻轻移动来抚摸。\n拖动地面旋转，停下 10 秒后回正。\n点击名字查看资料、成就和装扮，动作可在左侧预览。\n喂食、洗澡可连续使用物品，点外面收起。\n学习和打工同时只能进行一项，退出后任务继续。\nEsc 关闭菜单或弹窗，游戏自动保存。"
+	row_text(guide.replace("左侧","上方").replace("Esc","返回键") if portrait else guide,14)
 	divider()
 	row_text("玩法与素材",16)
 	row_text("养成玩法参考 QQ 宠物。",14)
@@ -1037,6 +1074,7 @@ func request_end():
 	divider()
 	panel_body.add_child(button("确认结束",func():game.end_task(now());close_panel(),true))
 	panel_body.add_child(button("继续任务",close_panel))
+	if portrait:PortraitLayout.prepare_scroll_body(panel_body)
 
 func hit_part(pos: Vector2) -> String:
 	var origin = camera.project_ray_origin(pos)
@@ -1107,11 +1145,15 @@ func _input(event: InputEvent):
 			if not stage.get_global_rect().has_point(logical):pressing=false
 		elif event.button_index==MOUSE_BUTTON_LEFT and item_menu.visible:
 			var logical=ui.get_global_transform_with_canvas().affine_inverse()*event.position
-			if not item_menu.get_global_rect().has_point(logical) and logical.x<ui.size.x-120:
+			var outside_trigger=not toolbar.get_global_rect().has_point(logical) if portrait else logical.x<ui.size.x-120
+			if not item_menu.get_global_rect().has_point(logical) and outside_trigger:
 				close_menu()
 				get_viewport().set_input_as_handled()
 
 func _process(delta: float):
+	if portrait and is_instance_valid(panel_error):
+		panel_error.visible=not panel_error.text.is_empty()
+		menu_error.visible=not menu_error.text.is_empty()
 	if is_instance_valid(panel_scroll) and modal.visible:
 		var bar=panel_scroll.get_v_scroll_bar()
 		scroll_fade.visible=bar.max_value>bar.page and bar.value+bar.page<bar.max_value-1

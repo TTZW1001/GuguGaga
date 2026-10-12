@@ -37,11 +37,33 @@ static func apply(app: Node):
 		# Keep both wings and task props in view on narrow portrait screens.
 		app.camera.size=maxf(3.8,3.15*app.stage.size.y/maxf(1,app.stage.size.x))
 	if app.modal.visible:apply_panel(app)
+	if app.item_menu.visible:apply_item_menu(app)
 
 static func apply_panel(app: Node):
 	var inset=app.Platform.safe_insets(app.get_window())
+	var available=app.ui.size-Vector2(inset.x+inset.z,inset.y+inset.w)
+	var width=minf(420,available.x*0.82)
+	var height=minf(540,available.y*(0.58 if app.panel_mode=="profile" else 0.48))
+	if app.panel_mode=="end":height=minf(280,available.y*0.34)
+	var center=Vector2(inset.x,inset.y)+available/2
 	app.panel.custom_minimum_size=Vector2.ZERO
-	app.anchored(app.panel,0,0,1,1,Vector4(14+inset.x,22+inset.y,-14-inset.z,-22-inset.w))
-	app.preview_pane.custom_minimum_size=Vector2(0,clampf(app.ui.size.y*0.27,180,260))
+	app.anchored(app.panel,0,0,0,0,Vector4(center.x-width/2,center.y-height/2,center.x+width/2,center.y+height/2))
+	app.preview_pane.custom_minimum_size=Vector2(0,clampf(height*0.25,120,150))
 	app.preview_pane.size_flags_vertical=Control.SIZE_FILL
-	app.anchored(app.toast,0,0,1,0,Vector4(22,inset.y+2,-22,inset.y+22))
+	app.anchored(app.toast,0,0,1,0,Vector4(22,maxf(inset.y,center.y-height/2-42),-22,center.y-height/2-8))
+
+static func apply_item_menu(app: Node):
+	var inset=app.Platform.safe_insets(app.get_window())
+	var available=app.ui.size-Vector2(inset.x+inset.z,inset.y+inset.w)
+	var width=minf(360,available.x*0.76)
+	app.item_menu.custom_minimum_size.x=0
+	var height=app.item_menu.get_combined_minimum_size().y
+	var center=Vector2(inset.x,inset.y)+available/2
+	app.anchored(app.item_menu,0,0,0,0,Vector4(center.x-width/2,center.y-height/2,center.x+width/2,center.y+height/2))
+
+static func prepare_scroll_body(node: Node):
+	# Let finger drags reach ScrollContainer even when they start on a button.
+	# Its scroll-begin notification cancels the button press past the deadzone.
+	if node is Control and node.mouse_filter==Control.MOUSE_FILTER_STOP:
+		node.mouse_filter=Control.MOUSE_FILTER_PASS
+	for child in node.get_children():prepare_scroll_body(child)

@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--sdk', type=Path, required=True)
     parser.add_argument('--jdk', type=Path, required=True)
     parser.add_argument('--debug-keystore', type=Path)
+    parser.add_argument('--output', type=Path, default=ROOT / 'build/android/GuguGaga-1.3.2-portrait-preview.apk')
     args = parser.parse_args()
     for path in [args.sdk / 'platform-tools/adb.exe', args.jdk / 'bin/java.exe',
                  ROOT / 'tools/templates/android_debug.apk']:
@@ -46,7 +47,7 @@ def main():
     settings.write_text('[gd_resource type="EditorSettings" format=3]\n\n[resource]\n' +
                         ''.join(f'export/android/{k} = {json.dumps(v)}\n' for k, v in values.items()),
                         encoding='utf-8')
-    output = ROOT / 'build/android/GuguGaga-1.3.2-portrait-preview.apk'
+    output = args.output.resolve()
     output.parent.mkdir(parents=True, exist_ok=True)
     log = runtime / 'export.log'
     env = dict(os.environ, APPDATA=str(runtime), JAVA_HOME=str(args.jdk),

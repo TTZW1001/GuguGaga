@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import subprocess
 import time
+from PIL import Image, ImageChops
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = 'com.ttzw1001.gugugaga.preview'
@@ -22,6 +23,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--adb', default='adb')
     parser.add_argument('--serial', required=True)
+    parser.add_argument('--capture-prefix', default='')
     args = parser.parse_args()
     base = [args.adb, '-s', args.serial]
 
@@ -48,7 +50,9 @@ def main():
 
     def capture(name):
         OUTPUT.mkdir(parents=True, exist_ok=True)
-        (OUTPUT / (name + '.png')).write_bytes(adb('exec-out', 'screencap', '-p'))
+        path = OUTPUT / (args.capture_prefix + name + '.png')
+        path.write_bytes(adb('exec-out', 'screencap', '-p'))
+        return Image.open(path).convert('RGB')
 
     def read_save():
         envelope = json.loads(adb('exec-out', 'run-as', PACKAGE, 'cat', 'files/penguin.json'))
@@ -82,11 +86,11 @@ def main():
     tap(220, 220)
     capture('android-profile-task')
     before = read_save()
-    swipe(520, 510, 180, 0)
+    swipe(520, 650, 180, 0)
     capture('android-preview-rotated')
-    tap(530, 1510)  # Spin in the profile tab; preview only.
+    tap(530, 1430)  # Spin in the compact profile tab; preview only.
     capture('android-preview-action')
-    tap(850, 840)  # Dress tab.
+    tap(850, 890)  # Fixed dress tab.
     tap(510, 1150)  # Red hood.
     dressed = read_save()
     expect(dressed['head'] == 'redhat', 'finger tap equips red hood')
@@ -94,9 +98,17 @@ def main():
            'task continues while rotating and previewing')
     expect(dressed['stats']['pet'] == before['stats']['pet'] and
            dressed['stats']['poke'] == before['stats']['poke'], 'preview does not award interactions')
-    capture('android-dress')
-    swipe(700, 1560, 0, -590)
-    capture('android-dress-scrolled')
+    before_scroll = capture('android-dress')
+    swipe(700, 1400, 0, -400)
+    after_scroll = capture('android-dress-scrolled')
+    expect(ImageChops.difference(before_scroll.crop((140, 975, 940, 1460)),
+                                 after_scroll.crop((140, 975, 940, 1460))).getbbox() is not None,
+           'finger swipe scrolls lower outfit content')
+    for name, region in [('title and close', (140, 430, 940, 535)),
+                         ('profile tabs', (140, 860, 940, 950))]:
+        expect(ImageChops.difference(before_scroll.crop(region), after_scroll.crop(region)).getbbox() is None,
+               name + ' stay fixed during finger scrolling')
+    expect(read_save()['head'] == 'redhat', 'swiping outfit buttons does not equip another item')
     shell('input', 'keyevent', '4')
     time.sleep(0.4)
     expect(bool(shell('pidof', PACKAGE).strip()), 'back from profile keeps game running')
@@ -108,9 +120,30 @@ def main():
            'process restart retains outfit and active task')
     expect(restored['coins'] == dressed['coins'], 'restart does not charge tuition twice')
     capture('android-restart')
+    # Capture the other compact dialogs on the device as well as on desktop.
+    for x, name in [(170, 'shop'), (540, 'food'), (900, 'clean')]:
+        tap(x, 1640)
+        capture('android-' + name)
+        if name == 'food':
+            tap(20, 960)  # Outside a centered care menu.
+        else:
+            shell('input', 'keyevent', '4')
+            time.sleep(0.4)
+    tap(785, 1780)
+    capture('android-end')
+    shell('input', 'keyevent', '4')
+    time.sleep(0.4)
+    tap(950, 1800)
+    capture('android-settings')
+    tap(760, 700)
+    capture('android-about')
+    swipe(700, 1300, 0, -400)
+    capture('android-about-scrolled')
+    shell('input', 'keyevent', '4')
+    time.sleep(0.4)
     pid = shell('pidof', PACKAGE).strip()
     logs = adb('logcat', '-d', '--pid=' + pid).decode('utf-8', errors='replace')
-    (OUTPUT / 'android-preview.log').write_text(logs, encoding='utf-8')
+    (OUTPUT / (args.capture_prefix + 'android-preview.log')).write_text(logs, encoding='utf-8')
     expect('SCRIPT ERROR' not in logs and 'FATAL EXCEPTION' not in logs and
            'Failed loading resource' not in logs, 'no script/resource/crash errors in current process')
     print(f'ANDROID_PREVIEW_TESTS {checks} checks, 0 failures', flush=True)
